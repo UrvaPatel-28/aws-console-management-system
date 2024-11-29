@@ -11,8 +11,8 @@ export class AuthService {
     private readonly userQueryBuilder: UserQueryBuilder,
   ) {}
 
-  async validateUser(username: string, password: string) {
-    const user = await this.userQueryBuilder.findUserByUserName(username);
+  async validateUser(email: string, password: string) {
+    const user = await this.userQueryBuilder.findUserByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException('Incorrect Email or Password');
@@ -28,6 +28,7 @@ export class AuthService {
 
   async login(loginRequestDto: UserBasicInfo) {
     return {
+      ...loginRequestDto,
       access_token: this.jwtService.sign({ ...loginRequestDto }),
     };
   }

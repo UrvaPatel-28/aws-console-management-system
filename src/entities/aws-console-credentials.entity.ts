@@ -1,8 +1,8 @@
 import { UUID } from 'crypto';
 import {
   Column,
-  CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -11,6 +11,9 @@ import { Base } from './base.entity';
 import { User } from './user.entity';
 
 @Entity()
+@Index('UQ_aws_console_credentials_aws_username', ['aws_username'], {
+  unique: true,
+})
 export class AwsConsoleCredentials extends Base {
   @PrimaryGeneratedColumn('uuid', {
     primaryKeyConstraintName: 'PK_aws_console_credentials_id',
@@ -30,6 +33,6 @@ export class AwsConsoleCredentials extends Base {
   @Column({ type: 'varchar', length: 100, nullable: false })
   aws_password!: string;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp without time zone' })
   expiration_time!: Date | null;
 }

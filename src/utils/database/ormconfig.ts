@@ -18,6 +18,6 @@ export default new DataSource({
   database: process.env.DB_DATABASE,
   entities: entities,
   migrations: [migrationFolder],
-  synchronize: false,
+  synchronize: true,
   logging: true,
 });

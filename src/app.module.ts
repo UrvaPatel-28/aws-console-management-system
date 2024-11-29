@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { entities } from './entities';
 import { UserModule } from './modules/user/user.module';
 import { migrationFolder } from './utils/database/ormconfig';
+import { AwsModule } from './modules/aws/aws.module';
+import { RoleModule } from './modules/role/role.module';
 
 @Module({
   imports: [
@@ -22,12 +24,14 @@ import { migrationFolder } from './utils/database/ormconfig';
         database: configService.get('DB_DATABASE'),
         entities: entities,
         migrations: [migrationFolder],
-        synchronize: false,
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),
     AuthModule,
     UserModule,
+    AwsModule,
+    RoleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

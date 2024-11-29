@@ -1,12 +1,12 @@
-import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
-import { trimAndFormat } from 'src/utils/common.utils';
 
 export class LoginRequestDto {
   @IsString()
-  @Transform(({ value }) => trimAndFormat(value))
-  username: string;
+  @ApiProperty({ example: 'admin@gmail.com' })
+  email: string;
 
   @IsString()
+  @ApiProperty({ example: 'Password@1234' })
   password: string;
 }

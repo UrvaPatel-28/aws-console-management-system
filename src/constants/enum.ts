@@ -11,3 +11,8 @@ export enum PermissionEnum {
   DeleteAwsCredentials = 'Delete Aws Credentials',
   ViewAuditLogs = 'View Audit Logs',
 }
+
+export enum AwsPolicyEffectEnum {
+  Allow = 'Allow',
+  Deny = 'Deny',
+}

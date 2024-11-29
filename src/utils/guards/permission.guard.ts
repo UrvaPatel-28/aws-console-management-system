@@ -27,14 +27,14 @@ export class PermissionGuard implements CanActivate {
       context.getHandler(),
     );
 
-    console.log(rolesFromHandler);
-
     const rolesSet = new Set(rolesFromHandler);
     // const permissionsSet = new Set(permissionsFromHandler);
 
     const request: Request & {
       user: UserBasicInfo;
     } = context.switchToHttp().getRequest();
+
+    if (request.user.role.name === RoleEnum.Admin) return true;
 
     if (!rolesSet.has(request.user.role.name))
       throw new ForbiddenException('Access denied');

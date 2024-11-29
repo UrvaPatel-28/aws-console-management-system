@@ -7,6 +7,7 @@ import { LocalStrategy } from 'src/utils/passport-strategies/local.strategy';
 import { JwtStrategy } from 'src/utils/passport-strategies/jwt.strategy';
 import { ConfigService } from '@nestjs/config';
 import { UserQueryBuilder } from '../user/user.query.builder';
+import { AwsModule } from '../aws/aws.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UserQueryBuilder } from '../user/user.query.builder';
         signOptions: { expiresIn: '1h' },
       }),
     }),
+    AwsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, UserQueryBuilder],

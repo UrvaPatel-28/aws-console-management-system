@@ -13,6 +13,7 @@ import { Role } from './role.entity';
 
 @Entity()
 @Unique('UQ_user_username', ['username'])
+@Unique('UQ_user_email', ['email'])
 export class User extends Base {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_user_id' })
   id!: UUID;
@@ -41,4 +42,7 @@ export class User extends Base {
     foreignKeyConstraintName: 'FK_user_role_id',
   })
   role: Role;
+
+  @Column({ type: 'varchar', length: 200, nullable: false })
+  email!: string;
 }
