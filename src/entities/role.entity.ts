@@ -26,6 +26,7 @@ export class Role {
 
   @ManyToMany(() => Permission, (permission) => permission.roles, {
     cascade: true,
+    eager: true,
   })
   @JoinTable({
     name: 'role_permission_link',

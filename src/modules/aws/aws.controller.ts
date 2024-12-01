@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -15,16 +14,14 @@ import { AwsS3Service } from './aws.s3.service';
 import { AwsStsService } from './aws.sts.service';
 import { AwsIamService } from './aws.iam.service';
 import {
-  AssignRoleRequestDto,
   AssumeRoleRequestDto,
   CreateLoginProfileRequestDto,
   CreatePolicyRequestDto,
   CreateRoleRequestDto,
   CreateAwsUserRequestDto,
-  UpdateCredentialRequestDto,
   GeneratePolicyRequestDto,
-  AssignPolicyToUserRequestDto,
-  AssignPolicyToRoleRequestDto,
+  AttachPolicyToUserRequestDto,
+  AttachPolicyToRoleRequestDto,
   CreateAccessKeyRequestDto,
 } from './dto/request.dto';
 
@@ -40,27 +37,52 @@ export class AwsController {
   ) {}
 
   @AllowUnauthorized()
-  @Get('temporary-console-access')
-  async getTemporaryConsoleAccess(
-    @Query('roleArn') roleArn: string,
-    @Query('sessionName') sessionName: string,
-    @Query('external_id') external_id: string,
-  ): Promise<{ consoleUrl: string }> {
-    const consoleUrl = await this.awsStsService.getTemporaryConsoleAccess(
-      roleArn,
-      sessionName,
-      external_id,
-    );
-    return { consoleUrl };
-  }
-
-  @AllowUnauthorized()
   @Post('create-policy')
   async createPolicy(@Body() createPolicyRequestDto: CreatePolicyRequestDto) {
     const policy = await this.awsIamService.createPolicy(
       createPolicyRequestDto,
     );
     return { policy };
+  }
+
+  @AllowUnauthorized()
+  @Post('generate-policy-document')
+  generatePolicyDocument(
+    @Body() generatePolicyRequestDto: GeneratePolicyRequestDto,
+  ) {
+    return this.awsIamService.generatePolicyDocument(generatePolicyRequestDto);
+  }
+
+  @AllowUnauthorized()
+  @Post('create-role')
+  async createRole(
+    @Body()
+    createRoleRequestDto: CreateRoleRequestDto,
+  ) {
+    const role = await this.awsIamService.createRole(createRoleRequestDto);
+    return { success: true, role };
+  }
+
+  @AllowUnauthorized()
+  @Post('attach-policy-to-role')
+  async attachPolicyToRole(
+    @Body() attachPolicyToRoleRequestDto: AttachPolicyToRoleRequestDto,
+  ) {
+    return this.awsIamService.attachPolicyToRole(attachPolicyToRoleRequestDto);
+  }
+
+  @AllowUnauthorized()
+  @Post('assume-role')
+  async assumeRole(@Body() assumeRoleRequestDto: AssumeRoleRequestDto) {
+    return await this.awsStsService.assumeRole(assumeRoleRequestDto);
+  }
+
+  @AllowUnauthorized()
+  @Post('attach-policy-to-user')
+  async attachPolicyToUser(
+    @Body() attachPolicyToUserRequestDto: AttachPolicyToUserRequestDto,
+  ) {
+    return this.awsIamService.attachPolicyToUser(attachPolicyToUserRequestDto);
   }
 
   @AllowUnauthorized()
@@ -75,25 +97,6 @@ export class AwsController {
   async getAllRoles() {
     const roles = await this.awsIamService.getAllRoles();
     return { roles };
-  }
-
-  @Post('create-role')
-  async createRole(
-    @Body()
-    createRoleRequestDto: CreateRoleRequestDto,
-  ) {
-    const role = await this.awsIamService.createRole(createRoleRequestDto);
-    return { success: true, role };
-  }
-
-  @Post('assign-role')
-  async assignRoleToUser(@Body() assignRoleRequestDto: AssignRoleRequestDto) {
-    return await this.awsIamService.assignRoleToUser(assignRoleRequestDto);
-  }
-
-  @Post('assume-role')
-  async assumeRole(@Body() assumeRoleRequestDto: AssumeRoleRequestDto) {
-    return await this.awsStsService.assumeRole(assumeRoleRequestDto);
   }
 
   @Post('create-user')
@@ -114,7 +117,7 @@ export class AwsController {
     );
   }
 
-  @Delete('/user-profile/:username')
+  @Delete('user-profile/:username')
   async deleteLoginProfile(@Param('username') username: string) {
     return this.awsIamService.deleteLoginProfile(username);
   }
@@ -122,33 +125,6 @@ export class AwsController {
   @Delete('user/:username')
   async deleteUser(@Param('username') username: string) {
     return this.awsIamService.deleteUser(username);
-  }
-  @Patch(':username')
-  async updateCredential(
-    @Body() updateCredentialRequestDto: UpdateCredentialRequestDto,
-  ) {
-    return this.awsIamService.updateCredential(updateCredentialRequestDto);
-  }
-
-  @Post('generate-policy')
-  async generatePolicy(
-    @Body() generatePolicyRequestDto: GeneratePolicyRequestDto,
-  ) {
-    return this.awsIamService.generatePolicy(generatePolicyRequestDto);
-  }
-
-  @Post('assign-policy-to-user')
-  async assignPolicyToUser(
-    @Body() assignPolicyToUserRequestDto: AssignPolicyToUserRequestDto,
-  ): Promise<any> {
-    return this.awsIamService.assignPolicyToUser(assignPolicyToUserRequestDto);
-  }
-
-  @Post('assign-policy-to-role')
-  async assignPolicyToRole(
-    @Body() assignPolicyToRoleRequestDto: AssignPolicyToRoleRequestDto,
-  ): Promise<any> {
-    return this.awsIamService.assignPolicyToRole(assignPolicyToRoleRequestDto);
   }
 
   @Post('create-access-keys')
@@ -158,5 +134,19 @@ export class AwsController {
     return this.awsIamService.createAccessKeys(
       createAccessKeyRequestDto.username,
     );
+  }
+
+  @Get('temporary-console-access')
+  async getTemporaryConsoleAccess(
+    @Query('roleArn') roleArn: string,
+    @Query('sessionName') sessionName: string,
+    @Query('external_id') external_id: string,
+  ): Promise<{ consoleUrl: string }> {
+    const consoleUrl = await this.awsStsService.getTemporaryConsoleAccess(
+      roleArn,
+      sessionName,
+      external_id,
+    );
+    return { consoleUrl };
   }
 }

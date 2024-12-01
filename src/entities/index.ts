@@ -1,3 +1,4 @@
+import { AuditLog } from './audit-logs.entity';
 import { AwsConsoleCredentials } from './aws-console-credentials.entity';
 import { AwsProgrammaticCredentials } from './aws-programmatic-credentials.entity';
 import { Base } from './base.entity';
@@ -12,4 +13,5 @@ export const entities = [
   Permission,
   AwsConsoleCredentials,
   AwsProgrammaticCredentials,
+  AuditLog,
 ];

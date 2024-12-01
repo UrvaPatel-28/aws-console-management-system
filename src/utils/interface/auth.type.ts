@@ -1,5 +1,5 @@
 import { UUID } from 'crypto';
-import { RoleEnum } from 'src/constants/enum';
+import { PermissionEnum, RoleEnum } from 'src/constants/enum';
 
 export type UserBasicInfo = {
   id: UUID;
@@ -7,6 +7,9 @@ export type UserBasicInfo = {
   role: {
     id: UUID;
     name: RoleEnum;
+    permissions: {
+      id: UUID;
+      name: PermissionEnum;
+    }[];
   };
-  team_leader: UUID | null;
 };

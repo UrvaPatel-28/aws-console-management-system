@@ -22,10 +22,17 @@ export class AwsConsoleCredentials extends Base {
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({
-    name: 'user_id',
-    foreignKeyConstraintName: 'FK_aws_console_credentials_user_id',
+    name: 'created_by',
+    foreignKeyConstraintName: 'FK_aws_console_credentials_created_by',
   })
-  user!: User;
+  created_by!: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({
+    name: 'updated_by',
+    foreignKeyConstraintName: 'FK_aws_console_credentials_updated_by',
+  })
+  updated_by!: User | null;
 
   @Column({ type: 'varchar', length: 50, nullable: false })
   aws_username!: string;

@@ -5,11 +5,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { PermissionGuard } from './utils/guards/permission.guard';
+import { AuditLoggingInterceptor } from './utils/interceptors/audit-logging.interceptor';
+import { DataSource } from 'typeorm';
+import { AllExceptionsFilter } from './utils/interceptors/global.exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const reflector = app.get(Reflector);
+  const dataSource = app.get(DataSource);
 
   app.enableCors({
     credentials: true,
@@ -23,6 +27,8 @@ async function bootstrap() {
   );
   app.useGlobalGuards(new JwtAuthGuard(reflector));
   app.useGlobalGuards(new PermissionGuard(reflector));
+  app.useGlobalInterceptors(new AuditLoggingInterceptor(dataSource));
+  app.useGlobalFilters(new AllExceptionsFilter(dataSource));
 
   const documentBuilder = new DocumentBuilder()
     .setTitle('AWS Credentials Management System')

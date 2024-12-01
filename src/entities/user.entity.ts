@@ -4,7 +4,6 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -23,18 +22,6 @@ export class User extends Base {
 
   @Column({ type: 'varchar', length: 300, nullable: false })
   password_hash!: string;
-
-  @ManyToOne(() => User, (user) => user.team_members, {
-    nullable: true,
-  })
-  @JoinColumn({
-    name: 'team_leader_id',
-    foreignKeyConstraintName: 'FK_user_team_leader_id',
-  })
-  team_leader: User | null;
-
-  @OneToMany(() => User, (user) => user.team_leader)
-  team_members: User[];
 
   @ManyToOne(() => Role, (role) => role.id, { eager: true })
   @JoinColumn({

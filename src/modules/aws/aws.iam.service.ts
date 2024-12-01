@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { AwsQueryBuilder } from './aws.query.builder';
 import {
   AttachRolePolicyCommand,
@@ -8,22 +8,32 @@ import {
   CreatePolicyCommand,
   CreateRoleCommand,
   CreateUserCommand,
+  DeleteAccessKeyCommand,
   DeleteLoginProfileCommand,
+  DeletePolicyCommand,
   DeleteUserCommand,
+  DeleteUserPolicyCommand,
+  DetachUserPolicyCommand,
+  GetLoginProfileCommand,
+  GetUserCommand,
   IAMClient,
+  ListAccessKeysCommand,
+  ListAttachedUserPoliciesCommand,
   ListPoliciesCommand,
   ListRolesCommand,
+  ListUserPoliciesCommand,
+  UpdateAccessKeyCommand,
   UpdateLoginProfileCommand,
+  UpdateUserCommand,
 } from '@aws-sdk/client-iam';
 import {
-  AssignRoleRequestDto,
   CreatePolicyRequestDto,
   CreateRoleRequestDto,
-  UpdateCredentialRequestDto,
   GeneratePolicyRequestDto,
-  AssignPolicyToUserRequestDto,
-  AssignPolicyToRoleRequestDto,
+  AttachPolicyToUserRequestDto,
+  AttachPolicyToRoleRequestDto,
 } from './dto/request.dto';
+import { AwsAccessKeysStatusEnum } from 'src/constants/enum';
 
 @Injectable()
 export class AwsIamService {
@@ -38,13 +48,29 @@ export class AwsIamService {
     });
   }
 
+  async createPolicy(createPolicyRequestDto: CreatePolicyRequestDto) {
+    const { policy_document, policy_name } = createPolicyRequestDto;
+    try {
+      const createPolicyCommand = new CreatePolicyCommand({
+        PolicyDocument: JSON.stringify(policy_document),
+        PolicyName: policy_name,
+        Description: 'This is description',
+        // Path: '/my-path/', //this is no affect any functionality, this only change arn like: arn:aws:iam::905418466860:policy/my-path/stspolicy2 && this used for organize and manage IAM resources
+      });
+      const policy = await this.iamClient.send(createPolicyCommand);
+      return policy;
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
   async createUser(username: string) {
     try {
       const createUserCommand = new CreateUserCommand({ UserName: username });
       const user = await this.iamClient.send(createUserCommand);
       return user.User;
     } catch (error) {
-      throw new Error(`Error creating temporary user: ${error.message}`);
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
@@ -57,30 +83,11 @@ export class AwsIamService {
       const createUserCommand = new CreateLoginProfileCommand({
         UserName: username,
         Password: password,
-        PasswordResetRequired: isPasswordResetRequired, // Force password reset on first login
+        PasswordResetRequired: isPasswordResetRequired,
       });
       return await this.iamClient.send(createUserCommand);
     } catch (error) {
-      throw new Error(`Error creating temporary user: ${error.message}`);
-    }
-  }
-
-  async createPolicy(createPolicyRequestDto: CreatePolicyRequestDto) {
-    const { policy_document, policy_name } = createPolicyRequestDto;
-    try {
-      const createPolicyCommand = new CreatePolicyCommand({
-        PolicyDocument: JSON.stringify(policy_document),
-        PolicyName: policy_name,
-        Description: 'this is description',
-        // Path: '/my-path/', //this is no affect any functionality, this only change arn like : arn:aws:iam::905418466860:policy/my-path/stspolicy2 && this used for organize and manage IAM resources
-      });
-      const policy = await this.iamClient.send(createPolicyCommand);
-      console.log(policy);
-      return policy;
-    } catch (error) {
-      console.log(error);
-
-      throw new Error(`Error creating temporary user: ${error.message}`);
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
@@ -94,140 +101,129 @@ export class AwsIamService {
       });
 
       const response = await this.iamClient.send(command);
-      console.log(response);
-
       return response.Policies || [];
     } catch (error) {
-      throw new Error(`Error fetching AWS policies: ${error.message}`);
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
   async getAllRoles(): Promise<any> {
     try {
       const command = new ListRolesCommand({});
-
       const response = await this.iamClient.send(command);
-      console.log(response);
-
       return response.Roles || [];
     } catch (error) {
-      throw new Error(`Error fetching AWS roles: ${error.message}`);
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
-  async createRole(createRoleRequestDto: CreateRoleRequestDto): Promise<any> {
-    const { assume_role_policy_document, role_name } = createRoleRequestDto;
+  async createRole(createRoleRequestDto: CreateRoleRequestDto) {
+    const { assume_role_policy_document, role_name, description, path, tags } =
+      createRoleRequestDto;
     try {
       const command = new CreateRoleCommand({
         RoleName: role_name,
         AssumeRolePolicyDocument: JSON.stringify(assume_role_policy_document),
+        Description: description,
+        Path: path,
+        Tags: tags,
       });
-      const response = await this.iamClient.send(command);
-      return response.Role;
+      return await this.iamClient.send(command);
     } catch (error) {
-      throw new Error(`Error creating role: ${error.message}`);
-    }
-  }
-
-  async assignRoleToUser(
-    assignRoleRequestDto: AssignRoleRequestDto,
-  ): Promise<string> {
-    const { roleArn, userName } = assignRoleRequestDto;
-    try {
-      // Attach the role policy to the user
-      const attachRolePolicyCommand = new AttachRolePolicyCommand({
-        RoleName: roleArn,
-        PolicyArn: `arn:aws:iam::aws:policy/${roleArn}`, // Adjust this as needed
-      });
-
-      await this.iamClient.send(attachRolePolicyCommand);
-      return `Role ${roleArn} successfully assigned to user ${userName}`;
-    } catch (error) {
-      console.log(error);
-
-      throw new Error(`Failed to assign role to user: ${error.message}`);
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
   async deleteLoginProfile(username: string): Promise<void> {
     const command = new DeleteLoginProfileCommand({ UserName: username });
-    const result = await this.iamClient.send(command);
-    console.log(result);
-  }
-
-  async deleteUser(username: string): Promise<void> {
-    const command2 = new DeleteUserCommand({ UserName: username });
-    const hi = await this.iamClient.send(command2);
-    console.log(hi);
-  }
-
-  async updateCredential(
-    updateCredentialRequestDto: UpdateCredentialRequestDto,
-  ): Promise<void> {
-    const { is_password_reset, newPassword, username } =
-      updateCredentialRequestDto;
-    const command = new UpdateLoginProfileCommand({
-      UserName: username,
-      Password: newPassword,
-      PasswordResetRequired: is_password_reset,
-    });
     await this.iamClient.send(command);
   }
 
-  async generatePolicy(generatePolicyRequestDto: GeneratePolicyRequestDto) {
-    const { actions, conditions, resources, name, effect } =
-      generatePolicyRequestDto;
+  async deleteUser(username: string): Promise<void> {
     try {
-      // construct the policy JSON document
-      const policyDocument = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: effect,
-            Action: actions,
-            Resource: resources,
-            Condition: conditions ? conditions : undefined,
-          },
-        ],
-      };
-
-      const command = new CreatePolicyCommand({
-        PolicyName: name,
-        PolicyDocument: JSON.stringify(policyDocument),
-      });
-
-      const response = await this.iamClient.send(command);
-
-      return response;
+      const command2 = new DeleteUserCommand({ UserName: username });
+      await this.iamClient.send(command2);
     } catch (error) {
-      console.error('Error creating policy:', error);
-      throw error;
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
-  async assignPolicyToUser(
-    assignPolicyToUserRequestDto: AssignPolicyToUserRequestDto,
-  ): Promise<any> {
-    const { policy_arn, username } = assignPolicyToUserRequestDto;
+  async deleteAccessKeys(username: string, accessKeyId: string): Promise<void> {
+    try {
+      const command2 = new DeleteAccessKeyCommand({
+        AccessKeyId: accessKeyId,
+        UserName: username,
+      });
+      await this.iamClient.send(command2);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
 
+  async updateUser(username: string, newUsername: string) {
+    try {
+      const command = new UpdateUserCommand({
+        UserName: username,
+        NewUserName: newUsername,
+      });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async updateLoginProfile(
+    username: string,
+    newPassword: string,
+  ): Promise<void> {
+    try {
+      const command = new UpdateLoginProfileCommand({
+        UserName: username,
+        Password: newPassword,
+      });
+      await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  generatePolicyDocument(generatePolicyRequestDto: GeneratePolicyRequestDto) {
+    const { actions, conditions, resources, effect } = generatePolicyRequestDto;
+    // construct the policy JSON document
+    const policyDocument = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: effect,
+          Action: actions,
+          Resource: resources,
+          Condition: conditions ? conditions : undefined,
+        },
+      ],
+    };
+    return policyDocument;
+  }
+
+  async attachPolicyToUser(
+    attachPolicyToUserRequestDto: AttachPolicyToUserRequestDto,
+  ): Promise<any> {
+    const { policy_arn, username } = attachPolicyToUserRequestDto;
     try {
       const command = new AttachUserPolicyCommand({
         UserName: username,
         PolicyArn: policy_arn,
       });
-
       const response = await this.iamClient.send(command);
       return response;
     } catch (error) {
-      console.error('Error attaching policy to user:', error);
-      throw error;
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
-  async assignPolicyToRole(
-    assignPolicyToRoleRequestDto: AssignPolicyToRoleRequestDto,
+  async attachPolicyToRole(
+    attachPolicyToRoleRequestDto: AttachPolicyToRoleRequestDto,
   ): Promise<any> {
-    const { role_name, policy_arn } = assignPolicyToRoleRequestDto;
+    const { role_name, policy_arn } = attachPolicyToRoleRequestDto;
 
     try {
       const command = new AttachRolePolicyCommand({
@@ -238,22 +234,131 @@ export class AwsIamService {
       const response = await this.iamClient.send(command);
       return response;
     } catch (error) {
-      console.error('Error attaching policy to role:', error);
-      throw error;
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 
   async createAccessKeys(username: string) {
     try {
       const command = new CreateAccessKeyCommand({ UserName: username });
-      const response = await this.iamClient.send(command);
-      return {
-        AccessKeyId: response.AccessKey.AccessKeyId,
-        SecretAccessKey: response.AccessKey.SecretAccessKey,
-      };
+      return await this.iamClient.send(command);
     } catch (error) {
-      console.error('Error while creating access keys:', error);
-      throw error;
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async listAccessKeys(username: string) {
+    try {
+      const command = new ListAccessKeysCommand({ UserName: username });
+      const response = await this.iamClient.send(command);
+
+      return response.AccessKeyMetadata;
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async getLogingProfile(username: string) {
+    try {
+      const command = new GetLoginProfileCommand({ UserName: username });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async getUser(username: string) {
+    try {
+      const command = new GetUserCommand({ UserName: username });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async updateAccessKeys(
+    username: string,
+    accessKeyId: string,
+    status: AwsAccessKeysStatusEnum,
+  ) {
+    try {
+      const command = new UpdateAccessKeyCommand({
+        AccessKeyId: accessKeyId,
+        Status: status,
+        UserName: username,
+      });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async deleteAccessKey(username: string, accessKeyId: string) {
+    try {
+      const command = new DeleteAccessKeyCommand({
+        AccessKeyId: accessKeyId,
+        UserName: username,
+      });
+      await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async deletePolicy(policyArn: string) {
+    try {
+      const command = new DeletePolicyCommand({
+        PolicyArn: policyArn,
+      });
+      await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async listAttachedUserPolicies(username: string) {
+    try {
+      const command = new ListAttachedUserPoliciesCommand({
+        UserName: username,
+      });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async detachUserPolicy(username: string, policyArn: string) {
+    try {
+      const command = new DetachUserPolicyCommand({
+        PolicyArn: policyArn,
+        UserName: username,
+      });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async listUserPolicies(username: string) {
+    try {
+      const command = new ListUserPoliciesCommand({
+        UserName: username,
+      });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
+  }
+
+  async deleteUserPolicy(username: string, policyName: string) {
+    try {
+      const command = new DeleteUserPolicyCommand({
+        PolicyName: policyName,
+        UserName: username,
+      });
+      return await this.iamClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 }

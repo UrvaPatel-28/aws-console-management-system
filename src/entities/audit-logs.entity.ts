@@ -1,38 +1,48 @@
-import { UUID } from 'crypto';
 import {
+  Entity,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Entity,
-  JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  JoinColumn,
 } from 'typeorm';
-import { Base } from './base.entity';
 import { User } from './user.entity';
 
 @Entity()
-export class AuditLogs extends Base {
+export class AuditLog {
   @PrimaryGeneratedColumn('uuid', {
-    primaryKeyConstraintName: 'PK_audit_logs_id',
+    primaryKeyConstraintName: 'PK_audit_log_id',
   })
-  id!: UUID;
+  id: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({
     name: 'user_id',
-    foreignKeyConstraintName: 'FK_audit_logs_user_id',
+    foreignKeyConstraintName: 'FK_audit_log_user_id',
   })
   user!: User;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
-  action!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  api_endpoint: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
-  resource_type!: string;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  http_method: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
-  resource_id!: string;
+  @Column({ type: 'json', nullable: true })
+  request_payload: Record<string, any>;
+
+  @Column({ type: 'int', nullable: true })
+  response_status: number;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  response_message: string;
 
   @CreateDateColumn()
-  expiration_time!: Date | null;
+  created_at!: Date;
+
+  @Column({ type: 'varchar', length: 45, nullable: true })
+  ip_address: string;
+
+  @Column({ type: 'float', nullable: true })
+  execution_duration: number;
 }

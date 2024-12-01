@@ -59,8 +59,6 @@ export class AwsStsService {
 
       return consoleUrl;
     } catch (error) {
-      console.log(error);
-
       throw new HttpException(
         `Error generating temporary console access: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -69,25 +67,20 @@ export class AwsStsService {
   }
 
   async assumeRole(assumeRoleRequestDto: AssumeRoleRequestDto): Promise<any> {
-    const { role_arn, session_name } = assumeRoleRequestDto;
+    const { role_arn, session_name, duration_in_seconds } =
+      assumeRoleRequestDto;
     try {
       const command = new AssumeRoleCommand({
         RoleArn: role_arn,
         RoleSessionName: session_name,
-        DurationSeconds: 3600,
+        DurationSeconds: duration_in_seconds,
+        // PolicyArns: [{ arn: 'arn:aws:iam::aws:policy/AmazonEC2FullAccess' }], // We can pass extra policy by policyArn and policy doucment
+        // Policy: 'Policy document',
       });
 
-      const response = await this.stsClient.send(command);
-      console.log(response);
-
-      return {
-        accessKeyId: response.Credentials?.AccessKeyId,
-        secretAccessKey: response.Credentials?.SecretAccessKey,
-        sessionToken: response.Credentials?.SessionToken,
-        expiration: response.Credentials?.Expiration,
-      };
+      return await this.stsClient.send(command);
     } catch (error) {
-      throw new Error(`Failed to assume role: ${error.message}`);
+      throw new HttpException(error, error.$metadata.httpStatusCode);
     }
   }
 }

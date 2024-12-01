@@ -1,7 +1,6 @@
 import { UUID } from 'crypto';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -9,6 +8,7 @@ import {
 } from 'typeorm';
 import { Base } from './base.entity';
 import { User } from './user.entity';
+import { AwsAccessKeysStatusEnum } from 'src/constants/enum';
 
 @Entity()
 export class AwsProgrammaticCredentials extends Base {
@@ -19,10 +19,20 @@ export class AwsProgrammaticCredentials extends Base {
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({
-    name: 'user_id',
-    foreignKeyConstraintName: 'FK_aws_programmatic_credentials_user_id',
+    name: 'created_by',
+    foreignKeyConstraintName: 'FK_aws_programmatic_credentials_created_by',
   })
-  user!: User;
+  created_by!: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({
+    name: 'updated_by',
+    foreignKeyConstraintName: 'FK_aws_programmatic_credentials_updated_by',
+  })
+  updated_by!: User | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: false })
+  aws_username!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: false })
   aws_access_key!: string;
@@ -30,6 +40,11 @@ export class AwsProgrammaticCredentials extends Base {
   @Column({ type: 'varchar', length: 100, nullable: false })
   aws_secret_key!: string;
 
-  @CreateDateColumn()
-  expiration_time!: Date | null;
+  @Column({
+    type: 'enum',
+    enum: AwsAccessKeysStatusEnum,
+    enumName: 'aws_access_keys_status_enum',
+    nullable: false,
+  })
+  status!: AwsAccessKeysStatusEnum;
 }
