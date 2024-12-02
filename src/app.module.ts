@@ -10,6 +10,8 @@ import { migrationFolder } from './utils/database/ormconfig';
 import { AwsModule } from './modules/aws/aws.module';
 import { RoleModule } from './modules/role/role.module';
 import { AuditLogsModule } from './modules/audit-logs/audit.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CleanupService } from './cleanup.service';
 
 @Module({
   imports: [
@@ -30,6 +32,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit.module';
       }),
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UserModule,
     AwsModule,
@@ -37,6 +40,6 @@ import { AuditLogsModule } from './modules/audit-logs/audit.module';
     AuditLogsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, CleanupService],
 })
 export class AppModule {}

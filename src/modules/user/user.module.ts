@@ -8,5 +8,6 @@ import { AwsModule } from '../aws/aws.module';
   imports: [AwsModule],
   controllers: [UserController],
   providers: [UserService, UserQueryBuilder],
+  exports: [UserService, UserQueryBuilder],
 })
 export class UserModule {}
