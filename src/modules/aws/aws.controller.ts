@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AwsService } from './aws.service';
 import { AllowUnauthorized } from 'src/utils/decorators/allow-unauthorized.decorator';
@@ -22,12 +14,21 @@ import {
   GeneratePolicyRequestDto,
   AttachPolicyToUserRequestDto,
   AttachPolicyToRoleRequestDto,
-  CreateAccessKeyRequestDto,
+  AwsUsernameRequestDto,
+  DeleteAccessKeysRequestDto,
+  GetTemporaryConsoleAccess,
 } from './dto/request.dto';
+import {
+  PermissionsNeeded,
+  RolesNeeded,
+} from 'src/utils/decorators/permissions.decorator';
+import { RoleEnum } from 'src/constants/enum';
 
 @Controller('aws')
 @ApiBearerAuth()
 @ApiTags('Aws')
+@RolesNeeded(RoleEnum.Admin, RoleEnum.TeamLeader)
+@PermissionsNeeded()
 export class AwsController {
   constructor(
     private readonly awsService: AwsService,
@@ -36,6 +37,9 @@ export class AwsController {
     private readonly awsIamService: AwsIamService,
   ) {}
 
+  /**
+   * Get all users from the database.
+   */
   @AllowUnauthorized()
   @Post('create-policy')
   async createPolicy(@Body() createPolicyRequestDto: CreatePolicyRequestDto) {
@@ -101,52 +105,95 @@ export class AwsController {
 
   @Post('create-user')
   async createUser(@Body() createAwsUserRequestDto: CreateAwsUserRequestDto) {
-    return this.awsIamService.createUser(createAwsUserRequestDto.user_name);
+    return this.awsIamService.createUser(createAwsUserRequestDto.aws_username);
   }
 
   @Post('create-login-profile')
   async createLoginProfile(
     @Body() createLoginProfileRequestDto: CreateLoginProfileRequestDto,
   ) {
-    const { username, password, is_password_reset_required } =
+    const { aws_password, aws_username, is_password_reset_required } =
       createLoginProfileRequestDto;
     return this.awsIamService.createLoginProfile(
-      username,
-      password,
+      aws_username,
+      aws_password,
       is_password_reset_required,
     );
   }
 
-  @Delete('user-profile/:username')
-  async deleteLoginProfile(@Param('username') username: string) {
-    return this.awsIamService.deleteLoginProfile(username);
+  @AllowUnauthorized()
+  @Get('list-access-keys')
+  async listAccessKeys(@Query() awsUsernameRequestDto: AwsUsernameRequestDto) {
+    return await this.awsIamService.listAccessKeys(
+      awsUsernameRequestDto.aws_username,
+    );
   }
 
-  @Delete('user/:username')
-  async deleteUser(@Param('username') username: string) {
-    return this.awsIamService.deleteUser(username);
+  @AllowUnauthorized()
+  @Get('get-login-profile')
+  async getLoginProfile(@Query() awsUsernameRequestDto: AwsUsernameRequestDto) {
+    return await this.awsIamService.getLoginProfile(
+      awsUsernameRequestDto.aws_username,
+    );
   }
+
+  @AllowUnauthorized()
+  @Get('list-attached-user-policies')
+  async listAttachedUserPolicies(
+    @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
+  ) {
+    return await this.awsIamService.listAttachedUserPolicies(
+      awsUsernameRequestDto.aws_username,
+    );
+  }
+
+  @AllowUnauthorized()
+  @Get('list-inline-user-policies')
+  async listUserPolicies(
+    @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
+  ) {
+    return await this.awsIamService.listUserPolicies(
+      awsUsernameRequestDto.aws_username,
+    );
+  }
+
+  @Delete('access-keys')
+  async deleteAccessKeys(
+    @Query() deleteAccessKeysRequestDto: DeleteAccessKeysRequestDto,
+  ) {
+    return this.awsIamService.deleteAccessKeys(
+      deleteAccessKeysRequestDto.username,
+      deleteAccessKeysRequestDto.access_key_id,
+    );
+  }
+
+  // @Delete('user-profile/:username')
+  // async deleteLoginProfile(@Param('username') username: string) {
+  //   return this.awsIamService.deleteLoginProfile(username);
+  // }
+
+  // @Delete('user/:username')
+  // async deleteUser(@Param('username') username: string) {
+  //   return this.awsIamService.deleteUser(username);
+  // }
 
   @Post('create-access-keys')
   async createAccessKeys(
-    @Body() createAccessKeyRequestDto: CreateAccessKeyRequestDto,
+    @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
     return this.awsIamService.createAccessKeys(
-      createAccessKeyRequestDto.username,
+      awsUsernameRequestDto.aws_username,
     );
   }
 
   @Get('temporary-console-access')
   async getTemporaryConsoleAccess(
-    @Query('roleArn') roleArn: string,
-    @Query('sessionName') sessionName: string,
-    @Query('external_id') external_id: string,
-  ): Promise<{ consoleUrl: string }> {
-    const consoleUrl = await this.awsStsService.getTemporaryConsoleAccess(
-      roleArn,
-      sessionName,
-      external_id,
+    getTemporaryConsoleAccess: GetTemporaryConsoleAccess,
+  ) {
+    return await this.awsStsService.getTemporaryConsoleAccess(
+      getTemporaryConsoleAccess.role_arn,
+      getTemporaryConsoleAccess.session_name,
+      getTemporaryConsoleAccess.external_id,
     );
-    return { consoleUrl };
   }
 }

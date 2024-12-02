@@ -12,6 +12,7 @@ export enum PermissionEnum {
   DeleteAwsCredentials = 'Delete Aws Credentials',
   ViewAwsCredentials = 'View Aws Credentials',
   ViewAuditLogs = 'View Audit Logs',
+  ManageRoleAndPermissions = 'Manage Role And Permissions',
 }
 
 export enum AwsPolicyEffectEnum {
@@ -22,4 +23,17 @@ export enum AwsPolicyEffectEnum {
 export enum AwsAccessKeysStatusEnum {
   Active = 'Active',
   Inactive = 'Inactive',
+}
+
+export enum OrderByEnum {
+  ApiEndpoint = 'Api Endpoint',
+  HttpMethod = 'Http Method',
+  ResponsesStatus = 'Response Status',
+  ExecutionDurationInMs = 'Execution Duration',
+  ResponseMessage = 'Response Message',
+}
+
+export enum SortByEnum {
+  ASC = 'ASC',
+  DESC = 'DESC',
 }

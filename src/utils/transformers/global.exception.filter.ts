@@ -24,7 +24,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request & UserBasicInfo>();
-    console.log('exxeption', exception);
+    console.log('exception', exception);
 
     const status =
       exception instanceof HttpException
@@ -46,9 +46,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
             responseData as { message: string | string[] }
           ).message;
           if (Array.isArray(responseMessage)) {
-            message = responseMessage[0]; // Get the first message if it's an array
+            message = responseMessage[0]; // Get the first message if it is an array
           } else {
-            message = responseMessage; // If it's a string, use it directly
+            message = responseMessage; // If it is a string, use it directly
           }
         }
       }
@@ -70,6 +70,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       api_endpoint: request.originalUrl,
       http_method: request.method,
       request_payload: request.body,
+      user_agent: request.headers['user-agent'],
       response_status: status,
       response_message: message,
       ip_address: request.ip,
@@ -77,9 +78,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     await this.dataSource.manager.save(AuditLog, auditLog);
 
     response.status(status).json({
-      message,
-      status,
       is_error: true,
+      status,
+      message,
     });
   }
 }

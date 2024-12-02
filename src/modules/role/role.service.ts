@@ -9,4 +9,12 @@ export class RoleService {
   async addRole(addRoleRequestDto: AddRoleRequestDto) {
     return await this.roleQueryBuilder.addRole(addRoleRequestDto);
   }
+
+  async getRoles() {
+    return await this.roleQueryBuilder.getRoles();
+  }
+
+  async getPermissions() {
+    return await this.roleQueryBuilder.getPermissions();
+  }
 }

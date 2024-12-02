@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import {
@@ -9,6 +17,7 @@ import {
   DeleteProgrammaticCredentialsRequestDto,
   UpdateAwsConsoleCredentialsRequestDto,
   UpdateProgrammaticCredentialsRequestDto,
+  UpdateUserRequestDto,
 } from './dto/request.dto';
 import {
   PermissionsNeeded,
@@ -17,16 +26,53 @@ import {
 import { PermissionEnum, RoleEnum } from 'src/constants/enum';
 import { UserBasicInfo } from 'src/utils/interface/auth.type';
 import { User } from 'src/utils/decorators/user.decorator';
+import { UUID } from 'crypto';
 
 @Controller('user')
 @ApiBearerAuth()
 @ApiTags('User')
+@RolesNeeded(RoleEnum.Admin)
+@PermissionsNeeded()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post()
   async createUser(@Body() createUserRequestDto: CreateUserRequestDto) {
-    return await this.userService.createUser(createUserRequestDto);
+    const data = await this.userService.createUser(createUserRequestDto);
+    return {
+      data,
+      message: 'User created successfully',
+    };
+  }
+
+  @RolesNeeded()
+  @PermissionsNeeded()
+  @Get()
+  async getUsers() {
+    const data = await this.userService.getUsers();
+    return {
+      data,
+      message: 'Hello ',
+    };
+  }
+
+  @RolesNeeded()
+  @PermissionsNeeded()
+  @Patch(':user_id')
+  async updateUser(
+    @Body() updateUserRequestDto: UpdateUserRequestDto,
+    @Param('user_id') userId: UUID,
+  ) {
+    return await this.userService.updateUser(updateUserRequestDto, userId);
+  }
+
+  @RolesNeeded()
+  @PermissionsNeeded()
+  @Get(':user_id')
+  async getUserDetails(@Param('user_id') userId: UUID) {
+    return await this.userService.getUserDetails(userId);
   }
 
   @Post('create-aws-console-user')
@@ -70,8 +116,8 @@ export class UserController {
   }
 
   @Post('create-aws-programmatic-credentials')
-  @PermissionsNeeded(PermissionEnum.CreateAwsCredentials)
   @RolesNeeded(RoleEnum.TeamLeader)
+  @PermissionsNeeded(PermissionEnum.CreateAwsCredentials)
   async createProgrammaticCredentials(
     @Body()
     createProgrammaticCredentialsRequestDto: CreateProgrammaticCredentialsRequestDto,
@@ -119,7 +165,7 @@ export class UserController {
   @Get('list-aws-programmatic-credentials')
   @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
   @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
-  async listAwsProgrammatcCredentials() {
-    return await this.userService.listAwsProgrammatcCredentials();
+  async listAwsProgrammaticCredentials() {
+    return await this.userService.listAwsProgrammaticCredentials();
   }
 }

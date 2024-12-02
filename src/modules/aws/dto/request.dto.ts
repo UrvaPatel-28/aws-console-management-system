@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -7,11 +8,18 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsStrongPassword,
   Max,
   Min,
 } from 'class-validator';
 import { AwsPolicyEffectEnum } from 'src/constants/enum';
 
+export class AwsUsernameRequestDto {
+  @IsString()
+  @ApiProperty({ example: 'user1' })
+  @Transform(({ value }) => value.trim().toLowerCase())
+  aws_username: string;
+}
 export class CreatePolicyRequestDto {
   @IsString()
   @ApiProperty({ example: 'custom-policy' })
@@ -116,11 +124,15 @@ export class AssumeRoleRequestDto {
 }
 
 export class CreateAwsUserRequestDto {
-  @IsString() user_name: string;
+  @IsString()
+  @Transform(({ value }) => value.trim().toLowerCase())
+  @ApiProperty({ example: 'user1' })
+  aws_username: string;
 }
 
 export class UpdateCredentialRequestDto {
   @IsString()
+  @Transform(({ value }) => value.trim().toLowerCase())
   username: string;
 
   @IsString()
@@ -131,12 +143,16 @@ export class UpdateCredentialRequestDto {
 
 export class CreateLoginProfileRequestDto {
   @IsString()
-  username: string;
+  @Transform(({ value }) => value.trim().toLowerCase())
+  @ApiProperty({ example: 'user1' })
+  aws_username: string;
 
-  @IsString()
-  password: string;
+  @IsStrongPassword({ minLength: 8 })
+  @ApiProperty({ example: 'Password@1234' })
+  aws_password: string;
 
   @IsBoolean()
+  @ApiProperty({ example: false })
   is_password_reset_required: boolean;
 }
 
@@ -165,11 +181,7 @@ export class GeneratePolicyRequestDto {
   effect: AwsPolicyEffectEnum;
 }
 
-export class AttachPolicyToUserRequestDto {
-  @IsString()
-  @ApiProperty({ example: 'user1' })
-  username: string;
-
+export class AttachPolicyToUserRequestDto extends AwsUsernameRequestDto {
   @IsString()
   @ApiProperty({ example: 'arn:aws:iam::aws:policy/AmazonS3FullAccess' })
   policy_arn: string;
@@ -189,5 +201,36 @@ export class AttachPolicyToRoleRequestDto {
 
 export class CreateAccessKeyRequestDto {
   @IsString()
+  @Transform(({ value }) => value.trim().toLowerCase())
   username: string;
+}
+
+export class DeleteAccessKeysRequestDto {
+  @IsString()
+  @Transform(({ value }) => value.trim().toLowerCase())
+  username: string;
+
+  @IsString()
+  access_key_id: string;
+}
+
+export class GetTemporaryConsoleAccess {
+  @IsString()
+  @ApiProperty({
+    example: 'arn:aws:iam::905418466860:role/custom-role/my-role-2',
+  })
+  role_arn: string;
+
+  @IsString()
+  @ApiProperty({
+    example: 'my-session',
+  })
+  session_name: string;
+
+  @IsString()
+  @ApiPropertyOptional({
+    example: 'testing',
+  })
+  @IsOptional()
+  external_id: string;
 }

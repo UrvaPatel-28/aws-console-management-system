@@ -207,10 +207,10 @@ export class AwsIamService {
   async attachPolicyToUser(
     attachPolicyToUserRequestDto: AttachPolicyToUserRequestDto,
   ): Promise<any> {
-    const { policy_arn, username } = attachPolicyToUserRequestDto;
+    const { policy_arn, aws_username } = attachPolicyToUserRequestDto;
     try {
       const command = new AttachUserPolicyCommand({
-        UserName: username,
+        UserName: aws_username,
         PolicyArn: policy_arn,
       });
       const response = await this.iamClient.send(command);
@@ -258,7 +258,7 @@ export class AwsIamService {
     }
   }
 
-  async getLogingProfile(username: string) {
+  async getLoginProfile(username: string) {
     try {
       const command = new GetLoginProfileCommand({ UserName: username });
       return await this.iamClient.send(command);

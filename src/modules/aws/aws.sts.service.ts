@@ -74,7 +74,7 @@ export class AwsStsService {
         RoleArn: role_arn,
         RoleSessionName: session_name,
         DurationSeconds: duration_in_seconds,
-        // PolicyArns: [{ arn: 'arn:aws:iam::aws:policy/AmazonEC2FullAccess' }], // We can pass extra policy by policyArn and policy doucment
+        // PolicyArns: [{ arn: 'arn:aws:iam::aws:policy/AmazonEC2FullAccess' }], // We can pass extra policy by policyArn and policy document
         // Policy: 'Policy document',
       });
 

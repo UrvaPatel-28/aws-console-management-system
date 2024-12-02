@@ -31,6 +31,9 @@ export class AuditLog {
   @Column({ type: 'json', nullable: true })
   request_payload: Record<string, any>;
 
+  @Column({ type: 'json', nullable: true })
+  response: Record<string, any>;
+
   @Column({ type: 'int', nullable: true })
   response_status: number;
 
@@ -39,6 +42,9 @@ export class AuditLog {
 
   @CreateDateColumn()
   created_at!: Date;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  user_agent: string;
 
   @Column({ type: 'varchar', length: 45, nullable: true })
   ip_address: string;

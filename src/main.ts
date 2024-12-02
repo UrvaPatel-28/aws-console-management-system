@@ -5,9 +5,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { PermissionGuard } from './utils/guards/permission.guard';
-import { AuditLoggingInterceptor } from './utils/interceptors/audit-logging.interceptor';
 import { DataSource } from 'typeorm';
-import { AllExceptionsFilter } from './utils/interceptors/global.exception.filter';
+import { AllExceptionsFilter } from './utils/transformers/global.exception.filter';
+import { AuditLoggingInterceptor } from './utils/transformers/audit-logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

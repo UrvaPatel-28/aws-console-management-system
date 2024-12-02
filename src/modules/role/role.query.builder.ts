@@ -16,22 +16,28 @@ export class RoleQueryBuilder {
     const { permissions, name } = addRoleRequestDto;
     return await this.dataSource.transaction(
       async (transactionalEntityManager) => {
-        // resolve and upsert permissions
-        const resolvedPermissions = await Promise.all(
-          permissions.map(async (permissionName) => {
-            await transactionalEntityManager.upsert(
-              Permission,
-              { name: permissionName },
-              { conflictPaths: ['name'] },
-            );
-            // fetch the permission entity to associate with the role
-            return transactionalEntityManager.findOne(Permission, {
+        // Resolve and upsert permissions
+        const resolvedPermissions: Permission[] = [];
+        for (const permissionName of permissions) {
+          let permission = await transactionalEntityManager.findOne(
+            Permission,
+            {
               where: { name: permissionName },
-            });
-          }),
-        );
+            },
+          );
 
-        // create or update the role
+          // If the permission does not exist, create and save it
+          if (!permission) {
+            permission = transactionalEntityManager.create(Permission, {
+              name: permissionName,
+            });
+          }
+
+          resolvedPermissions.push(permission);
+        }
+
+        // Create and save the role with associated permissions
+
         let role = await transactionalEntityManager.findOne(Role, {
           where: { name },
           relations: ['permissions'],
@@ -54,5 +60,13 @@ export class RoleQueryBuilder {
         return savedRole;
       },
     );
+  }
+
+  async getRoles() {
+    return await this.dataSource.manager.find(Role);
+  }
+
+  async getPermissions() {
+    return await this.dataSource.manager.find(Permission);
   }
 }

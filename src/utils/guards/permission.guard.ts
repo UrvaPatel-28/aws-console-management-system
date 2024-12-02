@@ -61,8 +61,8 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const rolesSet = new Set(rolesFromHandler);
-    const permissionsSet = new Set(permissionsFromHandler);
+    const rolesSet = new Set(roles);
+    const permissionsSet = new Set(permission);
 
     if (!rolesSet.has(request.user.role.name))
       throw new ForbiddenException('User does not have required role');

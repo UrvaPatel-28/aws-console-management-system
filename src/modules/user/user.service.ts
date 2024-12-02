@@ -12,12 +12,15 @@ import {
   DeleteProgrammaticCredentialsRequestDto,
   UpdateAwsConsoleCredentialsRequestDto,
   UpdateProgrammaticCredentialsRequestDto,
+  UpdateUserRequestDto,
 } from './dto/request.dto';
 import { UserBasicInfo } from 'src/utils/interface/auth.type';
 import { AwsIamService } from '../aws/aws.iam.service';
 import { AwsStsService } from '../aws/aws.sts.service';
-import { QueryFailedError } from 'typeorm';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { AwsAccessKeysStatusEnum } from 'src/constants/enum';
+import { UUID } from 'crypto';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @Injectable()
 export class UserService {
@@ -25,11 +28,51 @@ export class UserService {
     private readonly userQueryBuilder: UserQueryBuilder,
     private readonly awsIamService: AwsIamService,
     private readonly awsStsService: AwsStsService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async createUser(createUserRequestDto: CreateUserRequestDto) {
     try {
       return await this.userQueryBuilder.createUser(createUserRequestDto);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        error.driverError.code == 23503 &&
+        error.driverError.constraint == 'FK_user_role_id'
+      ) {
+        throw new NotFoundException('Role not found');
+      } else if (
+        error instanceof QueryFailedError &&
+        error.driverError.code == 23505 &&
+        error.driverError.constraint == 'UQ_user_email'
+      ) {
+        throw new ConflictException('Email already exist');
+      } else if (
+        error instanceof QueryFailedError &&
+        error.driverError.code == 23505 &&
+        error.driverError.constraint == 'UQ_user_username'
+      ) {
+        throw new ConflictException('Username already exist');
+      }
+      throw error;
+    }
+  }
+
+  async getUsers() {
+    return await this.userQueryBuilder.getUsers();
+  }
+
+  async getUserDetails(userId: UUID) {
+    return await this.userQueryBuilder.getUserDetails(userId);
+  }
+
+  async updateUser(updateUserRequestDto: UpdateUserRequestDto, userId: UUID) {
+    try {
+      return await this.userQueryBuilder.updateUser(
+        updateUserRequestDto,
+        userId,
+      );
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
@@ -60,17 +103,21 @@ export class UserService {
   ) {
     const { aws_password, aws_username, is_password_reset_required } =
       addAwsConsoleCredentialsRequestDto;
+
     try {
-      await this.awsIamService.createUser(aws_username);
-      await this.awsIamService.createLoginProfile(
-        aws_username,
-        aws_password,
-        is_password_reset_required,
-      );
-      return await this.userQueryBuilder.createAwsConsoleCredentials(
-        addAwsConsoleCredentialsRequestDto,
-        user,
-      );
+      await this.dataSource.transaction(async (transactionalEntityManager) => {
+        await this.userQueryBuilder.createAwsConsoleCredentials(
+          transactionalEntityManager,
+          addAwsConsoleCredentialsRequestDto,
+          user,
+        );
+        await this.awsIamService.createUser(aws_username);
+        await this.awsIamService.createLoginProfile(
+          aws_username,
+          aws_password,
+          is_password_reset_required,
+        );
+      });
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
@@ -78,6 +125,13 @@ export class UserService {
         error.driverError.constraint == 'FK_aws_console_credentials_created_by'
       ) {
         throw new NotFoundException('User not found in database');
+      } else if (
+        error instanceof QueryFailedError &&
+        error.driverError.code == 23505 &&
+        error.driverError.constraint ==
+          'UQ_aws_console_credentials_aws_username'
+      ) {
+        throw new NotFoundException('Username is already exist');
       }
       throw error;
     }
@@ -91,20 +145,24 @@ export class UserService {
       updateAwsConsoleCredentialsRequestDto;
     let awsUsername = aws_username;
     try {
-      if (aws_new_username) {
-        await this.awsIamService.updateUser(aws_username, aws_new_username);
-        awsUsername = aws_new_username;
-      }
-      if (aws_new_password) {
-        await this.awsIamService.updateLoginProfile(
-          awsUsername,
-          aws_new_password,
+      await this.dataSource.transaction(async (transactionalEntityManager) => {
+        await this.userQueryBuilder.updateAwsConsoleCredentials(
+          transactionalEntityManager,
+          updateAwsConsoleCredentialsRequestDto,
+          user,
         );
-      }
-      return await this.userQueryBuilder.updateAwsConsoleCredentials(
-        updateAwsConsoleCredentialsRequestDto,
-        user,
-      );
+
+        if (aws_new_username) {
+          await this.awsIamService.updateUser(aws_username, aws_new_username);
+          awsUsername = aws_new_username;
+        }
+        if (aws_new_password) {
+          await this.awsIamService.updateLoginProfile(
+            awsUsername,
+            aws_new_password,
+          );
+        }
+      });
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
@@ -112,6 +170,13 @@ export class UserService {
         error.driverError.constraint == 'FK_aws_console_credentials_updated_by'
       ) {
         throw new NotFoundException('User not found in database');
+      } else if (
+        error instanceof QueryFailedError &&
+        error.driverError.code == 23505 &&
+        error.driverError.constraint ==
+          'UQ_aws_console_credentials_aws_username'
+      ) {
+        throw new NotFoundException('Username is already exist');
       }
       throw error;
     }
@@ -123,46 +188,49 @@ export class UserService {
     const { aws_username } = deleteAwsConsoleCredentialsRequestDto;
 
     try {
-      await this.awsIamService.getUser(aws_username);
-
-      const accessKeyMetadata =
-        await this.awsIamService.listAccessKeys(aws_username);
-      const isLoginProfileExist =
-        await this.awsIamService.getLogingProfile(aws_username);
-      const attachedPolicies =
-        await this.awsIamService.listAttachedUserPolicies(aws_username);
-      const inlinePolicies =
-        await this.awsIamService.listUserPolicies(aws_username);
-
-      //Delete Access Keys
-      for (const accessKey of accessKeyMetadata) {
-        await this.awsIamService.deleteAccessKeys(
-          accessKey.UserName,
-          accessKey.AccessKeyId,
+      await this.dataSource.transaction(async (transactionalEntityManager) => {
+        await this.userQueryBuilder.deleteAwsConsoleCredentials(
+          transactionalEntityManager,
+          deleteAwsConsoleCredentialsRequestDto.aws_username,
         );
-      }
 
-      //Delete Login Profile
-      if (isLoginProfileExist)
-        await this.awsIamService.deleteLoginProfile(aws_username);
+        await this.awsIamService.getUser(aws_username);
 
-      for (const policy of attachedPolicies.AttachedPolicies || []) {
-        await this.awsIamService.detachUserPolicy(
-          aws_username,
-          policy.PolicyArn,
-        );
-      }
+        const accessKeyMetadata =
+          await this.awsIamService.listAccessKeys(aws_username);
+        const isLoginProfileExist =
+          await this.awsIamService.getLoginProfile(aws_username);
+        const attachedPolicies =
+          await this.awsIamService.listAttachedUserPolicies(aws_username);
+        const inlinePolicies =
+          await this.awsIamService.listUserPolicies(aws_username);
 
-      for (const policyName of inlinePolicies.PolicyNames || []) {
-        await this.awsIamService.deleteUserPolicy(aws_username, policyName);
-      }
+        //Delete Access Keys
+        for (const accessKey of accessKeyMetadata) {
+          await this.awsIamService.deleteAccessKeys(
+            accessKey.UserName,
+            accessKey.AccessKeyId,
+          );
+        }
 
-      //Delete User
-      await this.awsIamService.deleteUser(aws_username);
+        //Delete Login Profile
+        if (isLoginProfileExist)
+          await this.awsIamService.deleteLoginProfile(aws_username);
 
-      await this.userQueryBuilder.deleteAwsConsoleCredentials(
-        deleteAwsConsoleCredentialsRequestDto.aws_username,
-      );
+        for (const policy of attachedPolicies.AttachedPolicies || []) {
+          await this.awsIamService.detachUserPolicy(
+            aws_username,
+            policy.PolicyArn,
+          );
+        }
+
+        for (const policyName of inlinePolicies.PolicyNames || []) {
+          await this.awsIamService.deleteUserPolicy(aws_username, policyName);
+        }
+
+        //Delete User
+        await this.awsIamService.deleteUser(aws_username);
+      });
     } catch (error) {
       throw error;
     }
@@ -208,20 +276,24 @@ export class UserService {
   ) {
     const { aws_username, status } = updateProgrammaticCredentialsRequestDto;
     try {
-      const accessKeyMetadata =
-        await this.awsIamService.listAccessKeys(aws_username);
-
-      for (const accessKey of accessKeyMetadata) {
-        await this.awsIamService.updateAccessKeys(
-          accessKey.UserName,
-          accessKey.AccessKeyId,
-          status,
+      await this.dataSource.transaction(async (transactionalEntityManager) => {
+        await this.userQueryBuilder.updateAwsProgrammaticCredentials(
+          transactionalEntityManager,
+          updateProgrammaticCredentialsRequestDto,
+          user,
         );
-      }
-      return await this.userQueryBuilder.updateAwsProgrammaticCredentials(
-        updateProgrammaticCredentialsRequestDto,
-        user,
-      );
+
+        const accessKeyMetadata =
+          await this.awsIamService.listAccessKeys(aws_username);
+
+        for (const accessKey of accessKeyMetadata) {
+          await this.awsIamService.updateAccessKeys(
+            accessKey.UserName,
+            accessKey.AccessKeyId,
+            status,
+          );
+        }
+      });
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
@@ -240,18 +312,22 @@ export class UserService {
   ) {
     const { aws_username } = deleteProgrammaticCredentialsRequestDto;
     try {
-      const accessKeyMetadata =
-        await this.awsIamService.listAccessKeys(aws_username);
-
-      for (const accessKey of accessKeyMetadata) {
-        await this.awsIamService.deleteAccessKey(
-          accessKey.UserName,
-          accessKey.AccessKeyId,
+      await this.dataSource.transaction(async (transactionalEntityManager) => {
+        await this.userQueryBuilder.deleteProgrammaticCredentials(
+          transactionalEntityManager,
+          deleteProgrammaticCredentialsRequestDto.aws_username,
         );
-      }
-      return await this.userQueryBuilder.deleteProgrammaticCredentials(
-        deleteProgrammaticCredentialsRequestDto.aws_username,
-      );
+
+        const accessKeyMetadata =
+          await this.awsIamService.listAccessKeys(aws_username);
+
+        for (const accessKey of accessKeyMetadata) {
+          await this.awsIamService.deleteAccessKey(
+            accessKey.UserName,
+            accessKey.AccessKeyId,
+          );
+        }
+      });
     } catch (error) {
       throw error;
     }
@@ -261,7 +337,7 @@ export class UserService {
     return await this.userQueryBuilder.listAwsConsoleCredentials();
   }
 
-  async listAwsProgrammatcCredentials() {
-    return await this.userQueryBuilder.listAwsProgrammatcCredentials();
+  async listAwsProgrammaticCredentials() {
+    return await this.userQueryBuilder.listAwsProgrammaticCredentials();
   }
 }

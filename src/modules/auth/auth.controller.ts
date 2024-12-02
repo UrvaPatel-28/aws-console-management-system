@@ -23,6 +23,10 @@ export class AuthController {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...otherInfo } = loginRequestDto;
 
-    return this.authService.login({ ...otherInfo, ...user });
+    const data = await this.authService.login({ ...otherInfo, ...user });
+    return {
+      data,
+      message: 'Login successfully',
+    };
   }
 }

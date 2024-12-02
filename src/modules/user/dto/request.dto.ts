@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
@@ -11,11 +11,10 @@ import {
 } from 'class-validator';
 import { UUID } from 'crypto';
 import { AwsAccessKeysStatusEnum } from 'src/constants/enum';
-import { trimAndFormat } from 'src/utils/common.utils';
 
 export class CreateUserRequestDto {
   @IsString()
-  @Transform(({ value }) => trimAndFormat(value))
+  @Transform(({ value }) => value.trim().toLowerCase())
   @ApiProperty({ example: 'user1' })
   username: string;
 
@@ -30,7 +29,31 @@ export class CreateUserRequestDto {
 
   @IsUUID()
   @ApiProperty({ example: '0be34b3d-7240-4988-8c5a-24a63c656e40' })
-  role: UUID;
+  role_id: UUID;
+}
+
+export class UpdateUserRequestDto {
+  @IsString()
+  @Transform(({ value }) => value.trim().toLowerCase())
+  @IsOptional()
+  @ApiPropertyOptional({ example: 'user1' })
+  username: string;
+
+  @IsStrongPassword()
+  @IsOptional()
+  @ApiPropertyOptional({ example: 'Password@1234' })
+  password: string;
+
+  @IsString()
+  @Transform(({ value }) => value.trim().toLowerCase())
+  @IsOptional()
+  @ApiPropertyOptional({ example: 'user@gmail.com' })
+  email: string;
+
+  @IsUUID()
+  @ApiPropertyOptional({ example: '0be34b3d-7240-4988-8c5a-24a63c656e40' })
+  @IsOptional()
+  role_id: UUID;
 }
 
 export class AddAwsConsoleCredentialsRequestDto {

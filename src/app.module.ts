@@ -9,6 +9,7 @@ import { UserModule } from './modules/user/user.module';
 import { migrationFolder } from './utils/database/ormconfig';
 import { AwsModule } from './modules/aws/aws.module';
 import { RoleModule } from './modules/role/role.module';
+import { AuditLogsModule } from './modules/audit-logs/audit.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RoleModule } from './modules/role/role.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: entities,
+        logging: true,
         migrations: [migrationFolder],
         synchronize: true,
       }),
@@ -32,6 +34,7 @@ import { RoleModule } from './modules/role/role.module';
     UserModule,
     AwsModule,
     RoleModule,
+    AuditLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
