@@ -22,7 +22,7 @@ export class AuditLog {
   })
   user!: User | null;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   api_endpoint: string | null;
 
   @Column({ type: 'varchar', length: 10, nullable: true })
@@ -37,7 +37,7 @@ export class AuditLog {
   @Column({ type: 'int', nullable: true })
   response_status: number | null;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   response_message: string | null;
 
   @CreateDateColumn()

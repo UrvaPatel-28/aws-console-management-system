@@ -9,31 +9,53 @@ import { PermissionEnum, RoleEnum } from 'src/constants/enum';
 import { AddRoleRequestDto } from './dto/request.dto';
 
 @Controller('role')
-@ApiBearerAuth()
-@ApiTags('Role')
-@RolesNeeded(RoleEnum.Admin, RoleEnum.AccessManager)
-@PermissionsNeeded(PermissionEnum.ManageRoleAndPermissions)
+@ApiBearerAuth() // Adds Bearer Token Authentication for Swagger documentation.
+@ApiTags('Role') // Groups endpoints under the "Role" category in Swagger.
+@RolesNeeded(RoleEnum.Admin, RoleEnum.AccessManager) // Sets common roles required for all APIs of this this controller. (In this Admin and AccessManager)
+@PermissionsNeeded(PermissionEnum.ManageRoleAndPermissions) /// Sets common permissions required for all APIs of this this controller.
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
+  /**
+   * Adds a new role.
+   * @param addRoleRequestDto - DTO containing details of the role to add.
+   * @returns The created role or a success message.
+   */
   @Post()
   @RolesNeeded()
   @PermissionsNeeded()
   async addRole(@Body() addRoleRequestDto: AddRoleRequestDto) {
-    return await this.roleService.addRole(addRoleRequestDto);
+    const data = await this.roleService.addRole(addRoleRequestDto);
+    return {
+      data,
+    };
   }
 
+  /**
+   * Retrieves a list of all roles with their permissions.
+   * @returns An array of roles.
+   */
   @Get()
   @RolesNeeded()
   @PermissionsNeeded()
   async getRoles() {
-    return await this.roleService.getRoles();
+    const data = await this.roleService.getRoles();
+    return {
+      data,
+    };
   }
 
+  /**
+   * Retrieves a list of all permissions available in the system.
+   * @returns An array of permissions.
+   */
   @Get('list-permissions')
   @RolesNeeded()
   @PermissionsNeeded()
   async getPermissions() {
-    return await this.roleService.getPermissions();
+    const data = await this.roleService.getPermissions();
+    return {
+      data,
+    };
   }
 }

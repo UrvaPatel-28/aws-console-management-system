@@ -33,30 +33,9 @@ export class UserService {
   ) {}
 
   async createUser(createUserRequestDto: CreateUserRequestDto) {
-    try {
-      return await this.userQueryBuilder.createUser(createUserRequestDto);
-    } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23503 &&
-        error.driverError.constraint == 'FK_user_role_id'
-      ) {
-        throw new NotFoundException('Role not found');
-      } else if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23505 &&
-        error.driverError.constraint == 'UQ_user_email'
-      ) {
-        throw new ConflictException('Email already exist');
-      } else if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23505 &&
-        error.driverError.constraint == 'UQ_user_username'
-      ) {
-        throw new ConflictException('Username already exist');
-      }
-      throw error;
-    }
+    return await this.userQueryBuilder
+      .createUser(createUserRequestDto)
+      .catch(this.handleAddUserExceptions);
   }
 
   async getUsers() {
@@ -68,33 +47,9 @@ export class UserService {
   }
 
   async updateUser(updateUserRequestDto: UpdateUserRequestDto, userId: UUID) {
-    try {
-      return await this.userQueryBuilder.updateUser(
-        updateUserRequestDto,
-        userId,
-      );
-    } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23503 &&
-        error.driverError.constraint == 'FK_user_role_id'
-      ) {
-        throw new NotFoundException('Role not found');
-      } else if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23505 &&
-        error.driverError.constraint == 'UQ_user_email'
-      ) {
-        throw new ConflictException('Email already exist');
-      } else if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23505 &&
-        error.driverError.constraint == 'UQ_user_username'
-      ) {
-        throw new ConflictException('Username already exist');
-      }
-      throw error;
-    }
+    return await this.userQueryBuilder
+      .updateUser(updateUserRequestDto, userId)
+      .catch(this.handleAddUserExceptions);
   }
 
   async createAwsConsoleCredentials(
@@ -119,21 +74,7 @@ export class UserService {
         );
       });
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23503 &&
-        error.driverError.constraint == 'FK_aws_console_credentials_created_by'
-      ) {
-        throw new NotFoundException('User not found in database');
-      } else if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23505 &&
-        error.driverError.constraint ==
-          'UQ_aws_console_credentials_aws_username'
-      ) {
-        throw new NotFoundException('Username is already exist');
-      }
-      throw error;
+      this.handleCreateConsoleUserExceptions(error);
     }
   }
 
@@ -164,21 +105,7 @@ export class UserService {
         }
       });
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23503 &&
-        error.driverError.constraint == 'FK_aws_console_credentials_updated_by'
-      ) {
-        throw new NotFoundException('User not found in database');
-      } else if (
-        error instanceof QueryFailedError &&
-        error.driverError.code == 23505 &&
-        error.driverError.constraint ==
-          'UQ_aws_console_credentials_aws_username'
-      ) {
-        throw new NotFoundException('Username is already exist');
-      }
-      throw error;
+      this.handleCreateConsoleUserExceptions(error);
     }
   }
 
@@ -339,5 +266,45 @@ export class UserService {
 
   async listAwsProgrammaticCredentials() {
     return await this.userQueryBuilder.listAwsProgrammaticCredentials();
+  }
+
+  private handleAddUserExceptions(error) {
+    if (
+      error instanceof QueryFailedError &&
+      error.driverError.code == 23503 &&
+      error.driverError.constraint == 'FK_user_role_id'
+    ) {
+      throw new NotFoundException('Role not found');
+    } else if (
+      error instanceof QueryFailedError &&
+      error.driverError.code == 23505 &&
+      error.driverError.constraint == 'UQ_user_email'
+    ) {
+      throw new ConflictException('Email already exist');
+    } else if (
+      error instanceof QueryFailedError &&
+      error.driverError.code == 23505 &&
+      error.driverError.constraint == 'UQ_user_username'
+    ) {
+      throw new ConflictException('Username already exist');
+    }
+    throw error;
+  }
+
+  private handleCreateConsoleUserExceptions(error) {
+    if (
+      error instanceof QueryFailedError &&
+      error.driverError.code == 23503 &&
+      error.driverError.constraint == 'FK_aws_console_credentials_created_by'
+    ) {
+      throw new NotFoundException('User not found in database');
+    } else if (
+      error instanceof QueryFailedError &&
+      error.driverError.code == 23505 &&
+      error.driverError.constraint == 'UQ_aws_console_credentials_aws_username'
+    ) {
+      throw new NotFoundException('Username is already exist');
+    }
+    throw error;
   }
 }
