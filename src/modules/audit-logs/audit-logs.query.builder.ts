@@ -12,6 +12,11 @@ export class AuditLogsQueryBuilder {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Endpoint to retrieve audit logs based on filters and sorting with pagination
+   * @param getAuditLogsRequestDto - The query parameters used to filter and sort the audit logs.
+   * @returns Audit logs from database.
+   */
   async getAuditLogs(getAuditLogsRequestDto: GetAuditLogsRequestDto) {
     const {
       api_endpoint,

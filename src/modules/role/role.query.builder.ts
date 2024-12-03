@@ -12,6 +12,11 @@ export class RoleQueryBuilder {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Adds a new role along with its associated permissions.
+   * @param addRoleRequestDto - DTO containing the role name and permissions to be added.
+   * @returns The saved role entity with its associated permissions.
+   */
   async addRole(addRoleRequestDto: AddRoleRequestDto) {
     const { permissions, name } = addRoleRequestDto;
     return await this.dataSource.transaction(
@@ -19,6 +24,7 @@ export class RoleQueryBuilder {
         // Resolve and upsert permissions
         const resolvedPermissions: Permission[] = [];
         for (const permissionName of permissions) {
+          // Check if the permission already exists in the database
           let permission = await transactionalEntityManager.findOne(
             Permission,
             {
@@ -36,25 +42,24 @@ export class RoleQueryBuilder {
           resolvedPermissions.push(permission);
         }
 
-        // Create and save the role with associated permissions
-
+        // Check if the role already exists
         let role = await transactionalEntityManager.findOne(Role, {
           where: { name },
           relations: ['permissions'],
         });
 
         if (!role) {
-          // if role does not exist, create a new role
+          // If the role does not exist, create a new one
           role = transactionalEntityManager.create(Role, {
             name,
             permissions: resolvedPermissions,
           });
         } else {
-          // update the role's permissions if it already exists
+          // Update the permissions of the existing role
           role.permissions = resolvedPermissions;
         }
 
-        // save the role with its permissions (updates the role_permission_link table)
+        // Save the role along with its permissions (updates the role_permission_link table)
         const savedRole = await transactionalEntityManager.save(role);
 
         return savedRole;
@@ -62,10 +67,18 @@ export class RoleQueryBuilder {
     );
   }
 
+  /**
+   * Fetches all roles from the database.
+   * @returns A list of all roles.
+   */
   async getRoles() {
     return await this.dataSource.manager.find(Role);
   }
 
+  /**
+   * Fetches all permissions from the database.
+   * @returns A list of all permissions.
+   */
   async getPermissions() {
     return await this.dataSource.manager.find(Permission);
   }
