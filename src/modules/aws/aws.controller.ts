@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AwsService } from './aws.service';
 import { AllowUnauthorized } from 'src/utils/decorators/allow-unauthorized.decorator';
@@ -41,7 +49,7 @@ export class AwsController {
    * Get all users from the database.
    */
   @AllowUnauthorized()
-  @Post('create-policy')
+  @Post('iam/create-policy')
   async createPolicy(@Body() createPolicyRequestDto: CreatePolicyRequestDto) {
     const policy = await this.awsIamService.createPolicy(
       createPolicyRequestDto,
@@ -50,7 +58,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Post('generate-policy-document')
+  @Post('iam/generate-policy-document')
   generatePolicyDocument(
     @Body() generatePolicyRequestDto: GeneratePolicyRequestDto,
   ) {
@@ -58,7 +66,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Post('create-role')
+  @Post('iam/create-role')
   async createRole(
     @Body()
     createRoleRequestDto: CreateRoleRequestDto,
@@ -68,7 +76,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Post('attach-policy-to-role')
+  @Post('iam/attach-policy-to-role')
   async attachPolicyToRole(
     @Body() attachPolicyToRoleRequestDto: AttachPolicyToRoleRequestDto,
   ) {
@@ -76,13 +84,13 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Post('assume-role')
+  @Post('sts/assume-role')
   async assumeRole(@Body() assumeRoleRequestDto: AssumeRoleRequestDto) {
     return await this.awsStsService.assumeRole(assumeRoleRequestDto);
   }
 
   @AllowUnauthorized()
-  @Post('attach-policy-to-user')
+  @Post('iam/attach-policy-to-user')
   async attachPolicyToUser(
     @Body() attachPolicyToUserRequestDto: AttachPolicyToUserRequestDto,
   ) {
@@ -90,25 +98,25 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Get('get-policy')
+  @Get('iam/get-policy')
   async getAllPolicies() {
     const policy = await this.awsIamService.getAllPolicies();
     return { policy };
   }
 
   @AllowUnauthorized()
-  @Get('get-roles')
+  @Get('iam/get-roles')
   async getAllRoles() {
     const roles = await this.awsIamService.getAllRoles();
     return { roles };
   }
 
-  @Post('create-user')
+  @Post('iam/create-user')
   async createUser(@Body() createAwsUserRequestDto: CreateAwsUserRequestDto) {
     return this.awsIamService.createUser(createAwsUserRequestDto.aws_username);
   }
 
-  @Post('create-login-profile')
+  @Post('iam/create-login-profile')
   async createLoginProfile(
     @Body() createLoginProfileRequestDto: CreateLoginProfileRequestDto,
   ) {
@@ -122,7 +130,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Get('list-access-keys')
+  @Get('iam/list-access-keys')
   async listAccessKeys(@Query() awsUsernameRequestDto: AwsUsernameRequestDto) {
     return await this.awsIamService.listAccessKeys(
       awsUsernameRequestDto.aws_username,
@@ -130,7 +138,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Get('get-login-profile')
+  @Get('iam/get-login-profile')
   async getLoginProfile(@Query() awsUsernameRequestDto: AwsUsernameRequestDto) {
     return await this.awsIamService.getLoginProfile(
       awsUsernameRequestDto.aws_username,
@@ -138,7 +146,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Get('list-attached-user-policies')
+  @Get('iam/list-attached-user-policies')
   async listAttachedUserPolicies(
     @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
@@ -148,7 +156,7 @@ export class AwsController {
   }
 
   @AllowUnauthorized()
-  @Get('list-inline-user-policies')
+  @Get('iam/list-inline-user-policies')
   async listUserPolicies(
     @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
@@ -157,7 +165,7 @@ export class AwsController {
     );
   }
 
-  @Delete('access-keys')
+  @Delete('iam/access-keys')
   async deleteAccessKeys(
     @Query() deleteAccessKeysRequestDto: DeleteAccessKeysRequestDto,
   ) {
@@ -167,17 +175,17 @@ export class AwsController {
     );
   }
 
-  // @Delete('user-profile/:username')
-  // async deleteLoginProfile(@Param('username') username: string) {
-  //   return this.awsIamService.deleteLoginProfile(username);
-  // }
+  @Delete('iam/user-profile/:username')
+  async deleteLoginProfile(@Param('username') username: string) {
+    return this.awsIamService.deleteLoginProfile(username);
+  }
 
-  // @Delete('user/:username')
-  // async deleteUser(@Param('username') username: string) {
-  //   return this.awsIamService.deleteUser(username);
-  // }
+  @Delete('iam/user/:username')
+  async deleteUser(@Param('username') username: string) {
+    return this.awsIamService.deleteUser(username);
+  }
 
-  @Post('create-access-keys')
+  @Post('iam/create-access-keys')
   async createAccessKeys(
     @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
@@ -186,7 +194,7 @@ export class AwsController {
     );
   }
 
-  @Get('temporary-console-access')
+  @Get('iam/temporary-console-access')
   async getTemporaryConsoleAccess(
     getTemporaryConsoleAccess: GetTemporaryConsoleAccess,
   ) {
