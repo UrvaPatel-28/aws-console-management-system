@@ -118,12 +118,12 @@ export class AwsIamService {
     isPasswordResetRequired: boolean,
   ) {
     try {
-      const createUserCommand = new CreateLoginProfileCommand({
+      const createLoginProfileCommand = new CreateLoginProfileCommand({
         UserName: username,
         Password: password,
         PasswordResetRequired: isPasswordResetRequired,
       });
-      return await this.iamClient.send(createUserCommand);
+      return await this.iamClient.send(createLoginProfileCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -137,14 +137,14 @@ export class AwsIamService {
    */
   async getAllPolicies(): Promise<any> {
     try {
-      const command = new ListPoliciesCommand({
+      const listPoliciesCommand = new ListPoliciesCommand({
         Scope: 'Local', // Can be 'AWS', 'Local', or 'All'
         MaxItems: 100,
         // PathPrefix: '/my-path/', // Filter policy by path name
         // OnlyAttached: true, // The list of policies to include only those currently attached to an IAM user, group, or role.
       });
 
-      const response = await this.iamClient.send(command);
+      const response = await this.iamClient.send(listPoliciesCommand);
       return response.Policies || [];
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
@@ -159,8 +159,8 @@ export class AwsIamService {
    */
   async getAllRoles(): Promise<any> {
     try {
-      const command = new ListRolesCommand({});
-      const response = await this.iamClient.send(command);
+      const listRolesCommand = new ListRolesCommand({});
+      const response = await this.iamClient.send(listRolesCommand);
       return response.Roles || [];
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
@@ -178,14 +178,14 @@ export class AwsIamService {
     const { assume_role_policy_document, role_name, description, path, tags } =
       createRoleRequestDto;
     try {
-      const command = new CreateRoleCommand({
+      const createRoleCommand = new CreateRoleCommand({
         RoleName: role_name,
         AssumeRolePolicyDocument: JSON.stringify(assume_role_policy_document),
         Description: description,
         Path: path,
         Tags: tags,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(createRoleCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -198,8 +198,14 @@ export class AwsIamService {
    * @throws HttpException if there is an error from the AWS SDK.
    */
   async deleteLoginProfile(username: string) {
-    const command = new DeleteLoginProfileCommand({ UserName: username });
-    return await this.iamClient.send(command);
+    try {
+      const deleteLoginProfileCommand = new DeleteLoginProfileCommand({
+        UserName: username,
+      });
+      return await this.iamClient.send(deleteLoginProfileCommand);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
   }
 
   /**
@@ -210,8 +216,8 @@ export class AwsIamService {
    */
   async deleteUser(username: string) {
     try {
-      const command2 = new DeleteUserCommand({ UserName: username });
-      return await this.iamClient.send(command2);
+      const deleteUserCommand = new DeleteUserCommand({ UserName: username });
+      return await this.iamClient.send(deleteUserCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -226,11 +232,11 @@ export class AwsIamService {
    */
   async deleteAccessKeys(username: string, accessKeyId: string) {
     try {
-      const command2 = new DeleteAccessKeyCommand({
+      const deleteAccesskeyCommand = new DeleteAccessKeyCommand({
         AccessKeyId: accessKeyId,
         UserName: username,
       });
-      return await this.iamClient.send(command2);
+      return await this.iamClient.send(deleteAccesskeyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -246,11 +252,11 @@ export class AwsIamService {
    */
   async updateUser(username: string, newUsername: string) {
     try {
-      const command = new UpdateUserCommand({
+      const updateUserCommand = new UpdateUserCommand({
         UserName: username,
         NewUserName: newUsername,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(updateUserCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -265,11 +271,11 @@ export class AwsIamService {
    */
   async updateLoginProfile(username: string, newPassword: string) {
     try {
-      const command = new UpdateLoginProfileCommand({
+      const updateLoginProfileCommand = new UpdateLoginProfileCommand({
         UserName: username,
         Password: newPassword,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(updateLoginProfileCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -310,11 +316,11 @@ export class AwsIamService {
   ): Promise<any> {
     const { policy_arn, aws_username } = attachPolicyToUserRequestDto;
     try {
-      const command = new AttachUserPolicyCommand({
+      const attachUserPolicyCommand = new AttachUserPolicyCommand({
         UserName: aws_username,
         PolicyArn: policy_arn,
       });
-      const response = await this.iamClient.send(command);
+      const response = await this.iamClient.send(attachUserPolicyCommand);
       return response;
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
@@ -334,12 +340,12 @@ export class AwsIamService {
     const { role_name, policy_arn } = attachPolicyToRoleRequestDto;
 
     try {
-      const command = new AttachRolePolicyCommand({
+      const attachRolePolicyCommand = new AttachRolePolicyCommand({
         RoleName: role_name,
         PolicyArn: policy_arn,
       });
 
-      const response = await this.iamClient.send(command);
+      const response = await this.iamClient.send(attachRolePolicyCommand);
       return response;
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
@@ -355,8 +361,10 @@ export class AwsIamService {
    */
   async createAccessKeys(username: string) {
     try {
-      const command = new CreateAccessKeyCommand({ UserName: username });
-      return await this.iamClient.send(command);
+      const createAccesskeyCommand = new CreateAccessKeyCommand({
+        UserName: username,
+      });
+      return await this.iamClient.send(createAccesskeyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -371,8 +379,10 @@ export class AwsIamService {
    */
   async listAccessKeys(username: string) {
     try {
-      const command = new ListAccessKeysCommand({ UserName: username });
-      const response = await this.iamClient.send(command);
+      const listAccessKeyCommand = new ListAccessKeysCommand({
+        UserName: username,
+      });
+      const response = await this.iamClient.send(listAccessKeyCommand);
 
       return response.AccessKeyMetadata;
     } catch (error) {
@@ -389,8 +399,10 @@ export class AwsIamService {
    */
   async getLoginProfile(username: string) {
     try {
-      const command = new GetLoginProfileCommand({ UserName: username });
-      return await this.iamClient.send(command);
+      const getLoginProfileCommand = new GetLoginProfileCommand({
+        UserName: username,
+      });
+      return await this.iamClient.send(getLoginProfileCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -405,8 +417,8 @@ export class AwsIamService {
    */
   async getUser(username: string) {
     try {
-      const command = new GetUserCommand({ UserName: username });
-      return await this.iamClient.send(command);
+      const getUserCommand = new GetUserCommand({ UserName: username });
+      return await this.iamClient.send(getUserCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -427,12 +439,12 @@ export class AwsIamService {
     status: AwsAccessKeysStatusEnum,
   ) {
     try {
-      const command = new UpdateAccessKeyCommand({
+      const updateAccessKeyCommand = new UpdateAccessKeyCommand({
         AccessKeyId: accessKeyId,
         Status: status,
         UserName: username,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(updateAccessKeyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -447,11 +459,11 @@ export class AwsIamService {
    */
   async deleteAccessKey(username: string, accessKeyId: string) {
     try {
-      const command = new DeleteAccessKeyCommand({
+      const deleteAccesskeyCommand = new DeleteAccessKeyCommand({
         AccessKeyId: accessKeyId,
         UserName: username,
       });
-      await this.iamClient.send(command);
+      await this.iamClient.send(deleteAccesskeyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -465,10 +477,10 @@ export class AwsIamService {
    */
   async deletePolicy(policyArn: string) {
     try {
-      const command = new DeletePolicyCommand({
+      const deletePolicyCommand = new DeletePolicyCommand({
         PolicyArn: policyArn,
       });
-      await this.iamClient.send(command);
+      await this.iamClient.send(deletePolicyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -483,10 +495,11 @@ export class AwsIamService {
    */
   async listAttachedUserPolicies(username: string) {
     try {
-      const command = new ListAttachedUserPoliciesCommand({
-        UserName: username,
-      });
-      return await this.iamClient.send(command);
+      const listAttachedUserPoliciesCommand =
+        new ListAttachedUserPoliciesCommand({
+          UserName: username,
+        });
+      return await this.iamClient.send(listAttachedUserPoliciesCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -501,11 +514,11 @@ export class AwsIamService {
    */
   async detachUserPolicy(username: string, policyArn: string) {
     try {
-      const command = new DetachUserPolicyCommand({
+      const detachUserPolicyCommand = new DetachUserPolicyCommand({
         PolicyArn: policyArn,
         UserName: username,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(detachUserPolicyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -520,10 +533,10 @@ export class AwsIamService {
    */
   async listUserPolicies(username: string) {
     try {
-      const command = new ListUserPoliciesCommand({
+      const listUserPoliciesCommand = new ListUserPoliciesCommand({
         UserName: username,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(listUserPoliciesCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -538,11 +551,11 @@ export class AwsIamService {
    */
   async deleteUserPolicy(username: string, policyName: string) {
     try {
-      const command = new DeleteUserPolicyCommand({
+      const deleteUserPolicyCommand = new DeleteUserPolicyCommand({
         PolicyName: policyName,
         UserName: username,
       });
-      return await this.iamClient.send(command);
+      return await this.iamClient.send(deleteUserPolicyCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }

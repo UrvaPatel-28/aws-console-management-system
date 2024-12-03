@@ -33,7 +33,7 @@ export class AwsStsService {
     const { role_arn, session_name, duration_in_seconds } =
       assumeRoleRequestDto;
     try {
-      const command = new AssumeRoleCommand({
+      const assumeRoleCommand = new AssumeRoleCommand({
         RoleArn: role_arn,
         RoleSessionName: session_name,
         DurationSeconds: duration_in_seconds,
@@ -41,7 +41,7 @@ export class AwsStsService {
         // Policy: 'Policy document',
       });
 
-      return await this.stsClient.send(command);
+      return await this.stsClient.send(assumeRoleCommand);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }
@@ -65,14 +65,14 @@ export class AwsStsService {
   ): Promise<string> {
     try {
       //Assume role
-      const command = new AssumeRoleCommand({
+      const assumeRoleCommand = new AssumeRoleCommand({
         RoleArn: roleArn,
         RoleSessionName: sessionName,
         ExternalId: externalId, //Optional, useful in cross-account scenarios.
         DurationSeconds: durationSeconds, // Duration of the session (max: 12 hours)
       });
 
-      const response = await this.stsClient.send(command);
+      const response = await this.stsClient.send(assumeRoleCommand);
 
       const { AccessKeyId, SecretAccessKey, SessionToken } =
         response.Credentials;
