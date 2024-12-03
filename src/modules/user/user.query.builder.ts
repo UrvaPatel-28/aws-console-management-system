@@ -24,6 +24,10 @@ export class UserQueryBuilder {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Create a new user.
+   * @param createUserRequestDto - Data transfer object for creating a user.
+   */
   async createUser(createUserRequestDto: CreateUserRequestDto) {
     const { email, password, role_id, username } = createUserRequestDto;
 
@@ -41,6 +45,9 @@ export class UserQueryBuilder {
     });
   }
 
+  /**
+   * Get the list of all users.
+   */
   async getUsers() {
     return await this.dataSource.manager.find(User, {
       select: [
@@ -55,6 +62,10 @@ export class UserQueryBuilder {
     });
   }
 
+  /**
+   * Get details of a specific user.
+   * @param userId - UUID of the user.
+   */
   async getUserDetails(userId: UUID) {
     return await this.dataSource.manager.findOne(User, {
       where: { id: userId },
@@ -70,6 +81,11 @@ export class UserQueryBuilder {
     });
   }
 
+  /**
+   * Update an existing user.
+   * @param updateUserRequestDto - Data transfer object for updating a user.
+   * @param userId - UUID of the user to update.
+   */
   async updateUser(updateUserRequestDto: UpdateUserRequestDto, userId: UUID) {
     const { email, password, role_id, username } = updateUserRequestDto;
     const updateDetails: Partial<User> = {};
@@ -85,10 +101,20 @@ export class UserQueryBuilder {
     );
   }
 
+  /**
+   * Find user from database by provided email.
+   * @param email - Email of user.
+   */
   async findUserByEmail(email: string) {
     return this.dataSource.manager.findOne(User, { where: { email } });
   }
 
+  /**
+   * Create AWS Console credentials for a user.
+   * @param transactionalEntityManager - Database transactional manager
+   * @param addAwsConsoleCredentialsRequestDto - DTO with AWS Console credential details.
+   * @param user - User context passed from the decorator.
+   */
   async createAwsConsoleCredentials(
     transactionalEntityManager: EntityManager,
     addAwsConsoleCredentialsRequestDto: AddAwsConsoleCredentialsRequestDto,
@@ -106,6 +132,12 @@ export class UserQueryBuilder {
     return transactionalEntityManager.save(awsUser);
   }
 
+  /**
+   * Update AWS Console credentials for a user.
+   * @param transactionalEntityManager - Database transactional manager
+   * @param updateAwsConsoleCredentialsRequestDto - Data transfer object for updating AWS Console credentials.
+   * @param user - User context passed from the decorator.
+   */
   async updateAwsConsoleCredentials(
     transactionalEntityManager: EntityManager,
     updateAwsConsoleCredentialsRequestDto: UpdateAwsConsoleCredentialsRequestDto,
@@ -135,6 +167,11 @@ export class UserQueryBuilder {
     );
   }
 
+  /**
+   * Delete AWS Console credentials for a user.
+   * @param transactionalEntityManager - Database transactional manager
+   * @param username - Username of user.
+   */
   async deleteAwsConsoleCredentials(
     transactionalEntityManager: EntityManager,
     username: string,
@@ -144,6 +181,16 @@ export class UserQueryBuilder {
     });
   }
 
+  /**
+   * Create programmatic credentials for AWS services.
+   * @param AccessKeyId - AccessKeyId of programmatic user
+   * @param SecretAccessKey - SecretAccessKey of programmatic user
+   * @param status -  Status of access keys
+   * @param expiration_time - Expiration time of temporary generated credentials
+   * @param aws_username - AWS username
+   * @param user - User context passed from the decorator.
+   *
+   */
   async createProgrammaticCredentials(
     AccessKeyId: string,
     SecretAccessKey: string,
@@ -163,6 +210,13 @@ export class UserQueryBuilder {
     return this.dataSource.manager.save(awsUser);
   }
 
+  /**
+   * Update programmatic credentials for AWS services.
+   * @param transactionalEntityManager - Database transactional manager
+   * @param updateProgrammaticCredentialsRequestDto - Data transfer object for updating AWS programmatic credentials status.
+   * @param user - User context passed from the decorator.
+   * @returns
+   */
   async updateAwsProgrammaticCredentials(
     transactionalEntityManager: EntityManager,
     updateProgrammaticCredentialsRequestDto: UpdateProgrammaticCredentialsRequestDto,
@@ -179,6 +233,12 @@ export class UserQueryBuilder {
     );
   }
 
+  /**
+   * Delete programmatic credentials for AWS services.
+   * @param transactionalEntityManager - Database transactional manager
+   * @param deleteProgrammaticCredentialsRequestDto - Data transfer object for deleting AWS programmatic credentials status.
+   * @returns
+   */
   async deleteProgrammaticCredentials(
     transactionalEntityManager: EntityManager,
     username: string,

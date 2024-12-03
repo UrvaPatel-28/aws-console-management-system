@@ -67,6 +67,32 @@ export class UserController {
   }
 
   /**
+   * List all AWS Console credentials.
+   * Accessible by TeamLeader, TeamMember and Admin roles with appropriate permissions.
+   */
+  @Get('/list-console-credentials')
+  @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
+  @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
+  async listAwsConsoleCredentials() {
+    const data = await this.userService.listAwsConsoleCredentials();
+    return {
+      data,
+    };
+  }
+
+  /**
+   * List all AWS programmatic credentials.
+   * Accessible by TeamLeader, TeamMember and Admin roles with appropriate permissions.
+   */
+  @Get('/list-programmatic-credentials')
+  @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
+  @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
+  async listAwsProgrammaticCredentials() {
+    const data = await this.userService.listAwsProgrammaticCredentials();
+    return { data };
+  }
+
+  /**
    * Update an existing user.
    * Restricted to the Admin role.
    * @param updateUserRequestDto - Data transfer object for updating a user.
@@ -127,6 +153,7 @@ export class UserController {
       message: `AWS console credentials created successfully`,
     };
   }
+
   /**
    * Update AWS Console credentials for a user.
    * Restricted to the TeamLeader and Admin role and specific permissions.
@@ -242,31 +269,5 @@ export class UserController {
       data,
       message: 'AWS programmatic credentials deleted successfully',
     };
-  }
-
-  /**
-   * List all AWS Console credentials.
-   * Accessible by TeamLeader, TeamMember and Admin roles with appropriate permissions.
-   */
-  @Get('/aws/list-console-credentials')
-  @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
-  @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
-  async listAwsConsoleCredentials() {
-    const data = await this.userService.listAwsConsoleCredentials();
-    return {
-      data,
-    };
-  }
-
-  /**
-   * List all AWS programmatic credentials.
-   * Accessible by TeamLeader, TeamMember and Admin roles with appropriate permissions.
-   */
-  @Get('aws/list-programmatic-credentials')
-  @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
-  @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
-  async listAwsProgrammaticCredentials() {
-    const data = await this.userService.listAwsProgrammaticCredentials();
-    return { data };
   }
 }
