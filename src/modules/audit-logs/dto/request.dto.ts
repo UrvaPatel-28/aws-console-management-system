@@ -29,51 +29,51 @@ export class GetAuditLogsRequestDto extends PaginationDto {
   @IsUUID()
   @IsOptional()
   @ApiPropertyOptional({ example: 'a173180c-19cd-4c4d-ae30-83b25874a222' })
-  user_id: UUID | null;
+  user_id: UUID;
 
   @IsString()
   @IsOptional()
   @ApiPropertyOptional({ example: '/user/create-aws-console-user' })
-  api_endpoint: string | null;
+  api_endpoint: string;
 
   @IsString()
   @IsOptional()
   @ApiPropertyOptional({ example: 'POST' })
-  http_method: string | null;
+  http_method: string;
 
   @IsInt()
   @IsOptional()
   @ApiPropertyOptional({ example: 200 })
   @Transform(({ value }) => +value)
-  response_status: number | null;
+  response_status: number;
 
   @IsString()
   @IsOptional()
   @ApiPropertyOptional({ example: 'successfully' })
-  response_message: string | null;
+  response_message: string;
 
   @IsDate()
   @IsOptional()
   @ApiPropertyOptional({ example: '2024-12-02 04:14:54.178882' })
   @Transform(({ value }) => (value ? new Date(value) : value))
-  date_from: Date | null;
+  date_from: Date;
 
   @IsDate()
   @IsOptional()
   @ApiPropertyOptional({ example: '2024-12-02 04:14:54.178882' })
   @Transform(({ value }) => (value ? new Date(value) : value))
-  date_to: Date | null;
+  date_to: Date;
 
   @IsString()
   @IsOptional()
   @ApiPropertyOptional({ example: '192.78.0.9' })
-  ip_address: string | null;
+  ip_address: string;
 
   @IsInt()
   @IsOptional()
   @ApiPropertyOptional({ example: 70 })
   @Transform(({ value }) => +value)
-  execution_duration_in_ms: number | null;
+  execution_duration_in_ms: number;
 
   @IsEnum(SortByEnum)
   @IsOptional()

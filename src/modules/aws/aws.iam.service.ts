@@ -34,28 +34,35 @@ import {
   AttachPolicyToRoleRequestDto,
 } from './dto/request.dto';
 import { AwsAccessKeysStatusEnum } from 'src/constants/enum';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AwsIamService {
   private iamClient: IAMClient;
-  constructor(private readonly awsQueryBuilder: AwsQueryBuilder) {
+  constructor(
+    private readonly awsQueryBuilder: AwsQueryBuilder,
+    private readonly configService: ConfigService,
+  ) {
     this.iamClient = new IAMClient({
-      region: process.env.AWS_REGION,
+      region: this.configService.get<string>('AWS_REGION'),
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
       },
     });
   }
 
   async createPolicy(createPolicyRequestDto: CreatePolicyRequestDto) {
-    const { policy_document, policy_name } = createPolicyRequestDto;
+    const { policy_document, policy_name, description, path } =
+      createPolicyRequestDto;
     try {
       const createPolicyCommand = new CreatePolicyCommand({
         PolicyDocument: JSON.stringify(policy_document),
         PolicyName: policy_name,
-        Description: 'This is description',
-        // Path: '/my-path/', //this is no affect any functionality, this only change arn like: arn:aws:iam::905418466860:policy/my-path/stspolicy2 && this used for organize and manage IAM resources
+        Description: description,
+        Path: path, //this is no affect any functionality, this only change arn like: arn:aws:iam::905418466860:policy/custom-path/stspolicy2 && this used for organize and manage IAM resources
       });
       const policy = await this.iamClient.send(createPolicyCommand);
       return policy;
@@ -148,13 +155,13 @@ export class AwsIamService {
     }
   }
 
-  async deleteAccessKeys(username: string, accessKeyId: string): Promise<void> {
+  async deleteAccessKeys(username: string, accessKeyId: string) {
     try {
       const command2 = new DeleteAccessKeyCommand({
         AccessKeyId: accessKeyId,
         UserName: username,
       });
-      await this.iamClient.send(command2);
+      return await this.iamClient.send(command2);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }

@@ -20,35 +20,35 @@ export class AuditLog {
     name: 'user_id',
     foreignKeyConstraintName: 'FK_audit_log_user_id',
   })
-  user!: User;
+  user!: User | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  api_endpoint: string;
+  api_endpoint: string | null;
 
   @Column({ type: 'varchar', length: 10, nullable: true })
-  http_method: string;
+  http_method: string | null;
 
   @Column({ type: 'json', nullable: true })
-  request_payload: Record<string, any>;
+  request_payload: Record<string, any> | null;
 
   @Column({ type: 'json', nullable: true })
-  response: Record<string, any>;
+  response: Record<string, any> | null;
 
   @Column({ type: 'int', nullable: true })
-  response_status: number;
+  response_status: number | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  response_message: string;
+  response_message: string | null;
 
   @CreateDateColumn()
-  created_at!: Date;
+  created_at!: Date | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  user_agent: string;
+  user_agent: string | null;
 
   @Column({ type: 'varchar', length: 45, nullable: true })
-  ip_address: string;
+  ip_address: string | null;
 
   @Column({ type: 'float', nullable: true })
-  execution_duration: number;
+  execution_duration: number | null;
 }

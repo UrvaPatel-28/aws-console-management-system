@@ -23,7 +23,7 @@ export class User extends Base {
   @Column({ type: 'varchar', length: 300, nullable: false })
   password_hash!: string;
 
-  @ManyToOne(() => Role, (role) => role.id, { eager: true })
+  @ManyToOne(() => Role, (role) => role.id, { eager: true, nullable: false })
   @JoinColumn({
     name: 'role_id',
     foreignKeyConstraintName: 'FK_user_role_id',

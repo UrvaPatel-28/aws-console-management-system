@@ -56,12 +56,14 @@ export class UpdateUserRequestDto {
   role_id: UUID;
 }
 
-export class AddAwsConsoleCredentialsRequestDto {
+export class AwsUsernameDto {
   @IsString()
   @Transform(({ value }) => value.trim().toLowerCase())
   @ApiProperty({ example: 'user1' })
   aws_username: string;
+}
 
+export class AddAwsConsoleCredentialsRequestDto extends AwsUsernameDto {
   @IsStrongPassword({ minLength: 8 })
   @ApiProperty({ example: 'Password@1234' })
   aws_password: string;
@@ -75,18 +77,16 @@ export class AddAwsConsoleCredentialsRequestDto {
   is_password_reset_required: boolean;
 }
 
-export class UpdateAwsConsoleCredentialsRequestDto {
-  @IsString()
-  @Transform(({ value }) => value.trim().toLowerCase())
-  aws_username: string;
-
+export class UpdateAwsConsoleCredentialsRequestDto extends AwsUsernameDto {
   @IsString()
   @IsOptional()
   @Transform(({ value }) => value.trim().toLowerCase())
+  @ApiPropertyOptional({ example: 'user2' })
   aws_new_username: string;
 
   @IsString()
   @IsOptional()
+  @ApiPropertyOptional({ example: 'Password@1234' })
   aws_new_password: string;
 
   @IsDate()
@@ -98,24 +98,20 @@ export class UpdateAwsConsoleCredentialsRequestDto {
 export class DeleteAwsConsoleCredentialsRequestDto {
   @IsString()
   @Transform(({ value }) => value.trim().toLowerCase())
+  @ApiProperty({ example: 'user1' })
   aws_username: string;
 }
 
-export class CreateProgrammaticCredentialsRequestDto {
-  @IsString()
-  aws_username: string;
-
+export class CreateProgrammaticCredentialsRequestDto extends AwsUsernameDto {
   @IsDate()
   @Transform(({ value }) => (value ? new Date(value) : value))
   expiration_time: Date;
 }
 
-export class UpdateProgrammaticCredentialsRequestDto {
-  @IsString()
-  @Transform(({ value }) => value.trim().toLowerCase())
-  aws_username: string;
-
+export class UpdateProgrammaticCredentialsRequestDto extends AwsUsernameDto {
   @IsEnum(AwsAccessKeysStatusEnum)
+  @ApiPropertyOptional({ example: 'Active' })
+  @IsOptional()
   status: AwsAccessKeysStatusEnum;
 }
 

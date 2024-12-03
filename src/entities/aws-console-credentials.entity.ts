@@ -40,6 +40,6 @@ export class AwsConsoleCredentials extends Base {
   @Column({ type: 'varchar', length: 100, nullable: false })
   aws_password!: string;
 
-  @Column({ type: 'timestamp without time zone' })
+  @Column({ type: 'timestamp without time zone', nullable: true })
   expiration_time!: Date | null;
 }

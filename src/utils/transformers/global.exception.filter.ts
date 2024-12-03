@@ -13,11 +13,11 @@ import { DataSource } from 'typeorm';
 import { UserBasicInfo } from '../interface/auth.type';
 
 @Catch()
-export class AllExceptionsFilter implements ExceptionFilter {
+export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly logger = new Logger(AllExceptionsFilter.name),
+    private readonly logger = new Logger(GlobalExceptionFilter.name),
   ) {}
 
   async catch(exception: Error, host: ArgumentsHost) {

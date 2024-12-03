@@ -1,25 +1,50 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { AwsQueryBuilder } from './aws.query.builder';
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { AssumeRoleRequestDto } from './dto/request.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AwsStsService {
   private stsClient: STSClient;
-  constructor(private readonly awsQueryBuilder: AwsQueryBuilder) {
+  constructor(
+    private readonly awsQueryBuilder: AwsQueryBuilder,
+    private readonly configService: ConfigService,
+  ) {
     this.stsClient = new STSClient({
-      region: process.env.AWS_REGION,
+      region: this.configService.get<string>('AWS_REGION'),
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
       },
     });
+  }
+
+  async assumeRole(assumeRoleRequestDto: AssumeRoleRequestDto): Promise<any> {
+    const { role_arn, session_name, duration_in_seconds } =
+      assumeRoleRequestDto;
+    try {
+      const command = new AssumeRoleCommand({
+        RoleArn: role_arn,
+        RoleSessionName: session_name,
+        DurationSeconds: duration_in_seconds,
+        // PolicyArns: [{ arn: 'arn:aws:iam::aws:policy/AmazonEC2FullAccess' }], // We can pass extra policy by policyArn and policy document
+        // Policy: 'Policy document',
+      });
+
+      return await this.stsClient.send(command);
+    } catch (error) {
+      throw new HttpException(error, error.$metadata.httpStatusCode);
+    }
   }
 
   async getTemporaryConsoleAccess(
     roleArn: string,
     sessionName: string,
     externalId: string,
+    durationSeconds: number,
   ): Promise<string> {
     try {
       //Assume role
@@ -27,13 +52,10 @@ export class AwsStsService {
         RoleArn: roleArn,
         RoleSessionName: sessionName,
         ExternalId: externalId,
-        DurationSeconds: 900, // Duration of the session (max: 12 hours)
+        DurationSeconds: durationSeconds, // Duration of the session (max: 12 hours)
       });
 
       const response = await this.stsClient.send(command);
-      if (!response.Credentials) {
-        throw new Error('Failed to assume role');
-      }
 
       const { AccessKeyId, SecretAccessKey, SessionToken } =
         response.Credentials;
@@ -58,27 +80,6 @@ export class AwsStsService {
       )}&SigninToken=${signinToken.SigninToken}`;
 
       return consoleUrl;
-    } catch (error) {
-      throw new HttpException(
-        `Error generating temporary console access: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async assumeRole(assumeRoleRequestDto: AssumeRoleRequestDto): Promise<any> {
-    const { role_arn, session_name, duration_in_seconds } =
-      assumeRoleRequestDto;
-    try {
-      const command = new AssumeRoleCommand({
-        RoleArn: role_arn,
-        RoleSessionName: session_name,
-        DurationSeconds: duration_in_seconds,
-        // PolicyArns: [{ arn: 'arn:aws:iam::aws:policy/AmazonEC2FullAccess' }], // We can pass extra policy by policyArn and policy document
-        // Policy: 'Policy document',
-      });
-
-      return await this.stsClient.send(command);
     } catch (error) {
       throw new HttpException(error, error.$metadata.httpStatusCode);
     }

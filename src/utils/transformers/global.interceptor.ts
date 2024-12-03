@@ -12,7 +12,7 @@ import { AuditLog } from 'src/entities/audit-logs.entity';
 import { Request, Response } from 'express';
 
 @Injectable()
-export class AuditLoggingInterceptor implements NestInterceptor {
+export class GlobalInterceptor implements NestInterceptor {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,

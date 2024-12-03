@@ -49,6 +49,16 @@ export class CreatePolicyRequestDto {
     },
   })
   policy_document: object;
+
+  @IsString()
+  @IsOptional()
+  @ApiPropertyOptional({ example: 'This is description' })
+  description: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiPropertyOptional({ example: '/custom-path/' })
+  path: string;
 }
 
 export class TagDto {
@@ -99,11 +109,6 @@ export class CreateRoleRequestDto {
   tags: TagDto[];
 }
 
-export class AssignRoleRequestDto {
-  @IsString() userName: string;
-  @IsString() roleArn: string;
-}
-
 export class AssumeRoleRequestDto {
   @IsString()
   @ApiProperty({
@@ -118,8 +123,8 @@ export class AssumeRoleRequestDto {
   @IsInt()
   @Min(900) // 15 minutes
   @Max(43200) //12 hours
-  @IsOptional()
   @ApiProperty({ example: 3600 })
+  @Transform(({ value }) => +value)
   duration_in_seconds: number;
 }
 
@@ -128,17 +133,6 @@ export class CreateAwsUserRequestDto {
   @Transform(({ value }) => value.trim().toLowerCase())
   @ApiProperty({ example: 'user1' })
   aws_username: string;
-}
-
-export class UpdateCredentialRequestDto {
-  @IsString()
-  @Transform(({ value }) => value.trim().toLowerCase())
-  username: string;
-
-  @IsString()
-  newPassword: string;
-  @IsBoolean()
-  is_password_reset: boolean;
 }
 
 export class CreateLoginProfileRequestDto {
@@ -152,7 +146,8 @@ export class CreateLoginProfileRequestDto {
   aws_password: string;
 
   @IsBoolean()
-  @ApiProperty({ example: false })
+  @IsOptional()
+  @ApiPropertyOptional({ example: false })
   is_password_reset_required: boolean;
 }
 
@@ -170,11 +165,9 @@ export class GeneratePolicyRequestDto {
   @IsObject()
   @IsOptional()
   @ApiPropertyOptional({
-    description: 'Conditions for the policy.',
     example: { DateLessThan: { 'aws:CurrentTime': '2024-11-29T15:00:00Z' } },
-    required: false,
   })
-  conditions?: object;
+  conditions: object;
 
   @ApiProperty({ example: 'Allow' })
   @IsEnum(AwsPolicyEffectEnum)
@@ -199,18 +192,9 @@ export class AttachPolicyToRoleRequestDto {
   policy_arn: string;
 }
 
-export class CreateAccessKeyRequestDto {
+export class DeleteAccessKeysRequestDto extends AwsUsernameRequestDto {
   @IsString()
-  @Transform(({ value }) => value.trim().toLowerCase())
-  username: string;
-}
-
-export class DeleteAccessKeysRequestDto {
-  @IsString()
-  @Transform(({ value }) => value.trim().toLowerCase())
-  username: string;
-
-  @IsString()
+  @ApiProperty({ example: 'AKIA5FTZFMYWBP7D874GP6' })
   access_key_id: string;
 }
 
@@ -233,4 +217,11 @@ export class GetTemporaryConsoleAccess {
   })
   @IsOptional()
   external_id: string;
+
+  @IsInt()
+  @Min(900) // 15 minutes
+  @Max(43200) //12 hours
+  @ApiProperty({ example: 3600 })
+  @Transform(({ value }) => +value)
+  duration_in_seconds: number;
 }
