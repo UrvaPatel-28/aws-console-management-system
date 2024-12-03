@@ -8,9 +8,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AwsService } from './aws.service';
-import { AllowUnauthorized } from 'src/utils/decorators/allow-unauthorized.decorator';
-import { AwsS3Service } from './aws.s3.service';
 import { AwsStsService } from './aws.sts.service';
 import { AwsIamService } from './aws.iam.service';
 import {
@@ -33,175 +30,334 @@ import {
 import { RoleEnum } from 'src/constants/enum';
 
 @Controller('aws')
-@ApiBearerAuth()
-@ApiTags('Aws')
-@RolesNeeded(RoleEnum.Admin, RoleEnum.TeamLeader)
-@PermissionsNeeded()
+@ApiBearerAuth() // Adds a bearer token authentication in Swagger documentation.
+@ApiTags('Aws') // Groups this controller under the "AWS" category in Swagger.
+@RolesNeeded(RoleEnum.Admin, RoleEnum.TeamLeader) // Sets common roles required for all APIs of this this controller. (In this Admin and TeamLeader)
+@PermissionsNeeded() // Sets common permissions required for all APIs of this this controller.
 export class AwsController {
   constructor(
-    private readonly awsService: AwsService,
-    private readonly awsS3Service: AwsS3Service,
     private readonly awsStsService: AwsStsService,
     private readonly awsIamService: AwsIamService,
   ) {}
 
   /**
-   * Get all users from the database.
+   * Creates an IAM policy.
+   * @param createPolicyRequestDto - DTO containing policy details.
+   * @returns The created policy.
    */
-  @AllowUnauthorized()
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/create-policy')
   async createPolicy(@Body() createPolicyRequestDto: CreatePolicyRequestDto) {
-    const policy = await this.awsIamService.createPolicy(
-      createPolicyRequestDto,
-    );
-    return { policy };
+    const data = await this.awsIamService.createPolicy(createPolicyRequestDto);
+    return { data, message: 'AWS Policy created successfully' };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Generates an IAM policy document.
+   * @param generatePolicyRequestDto - DTO with policy details.
+   * @returns The generated policy document.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/generate-policy-document')
   generatePolicyDocument(
     @Body() generatePolicyRequestDto: GeneratePolicyRequestDto,
   ) {
-    return this.awsIamService.generatePolicyDocument(generatePolicyRequestDto);
+    const data = this.awsIamService.generatePolicyDocument(
+      generatePolicyRequestDto,
+    );
+    return {
+      data,
+      message: 'AWS Policy document created successfully',
+    };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Creates an IAM role.
+   * @param createRoleRequestDto - DTO with role details.
+   * @returns The created role.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/create-role')
-  async createRole(
-    @Body()
-    createRoleRequestDto: CreateRoleRequestDto,
-  ) {
-    const role = await this.awsIamService.createRole(createRoleRequestDto);
-    return { success: true, role };
+  async createRole(@Body() createRoleRequestDto: CreateRoleRequestDto) {
+    const data = await this.awsIamService.createRole(createRoleRequestDto);
+    return { data, message: 'AWS Role created successfully' };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Attaches a policy to an IAM role.
+   * @param attachPolicyToRoleRequestDto - DTO with role and policy details.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/attach-policy-to-role')
   async attachPolicyToRole(
     @Body() attachPolicyToRoleRequestDto: AttachPolicyToRoleRequestDto,
   ) {
-    return this.awsIamService.attachPolicyToRole(attachPolicyToRoleRequestDto);
+    const data = await this.awsIamService.attachPolicyToRole(
+      attachPolicyToRoleRequestDto,
+    );
+    return {
+      data,
+      message: 'AWS policy successfully attached to the Role',
+    };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Assumes an IAM role using AWS STS.
+   * @param assumeRoleRequestDto - DTO with role assumption details.
+   * @returns Temporary credentials.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('sts/assume-role')
   async assumeRole(@Body() assumeRoleRequestDto: AssumeRoleRequestDto) {
-    return await this.awsStsService.assumeRole(assumeRoleRequestDto);
+    const data = await this.awsStsService.assumeRole(assumeRoleRequestDto);
+    return {
+      data,
+      message: 'AWS Role successfully assumed by User',
+    };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Attaches a policy to an IAM user.
+   * @param attachPolicyToUserRequestDto - DTO with user and policy details.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/attach-policy-to-user')
   async attachPolicyToUser(
     @Body() attachPolicyToUserRequestDto: AttachPolicyToUserRequestDto,
   ) {
-    return this.awsIamService.attachPolicyToUser(attachPolicyToUserRequestDto);
+    const data = await this.awsIamService.attachPolicyToUser(
+      attachPolicyToUserRequestDto,
+    );
+    return {
+      data,
+      message: 'AWS policy successfully attached to the User',
+    };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Retrieves all IAM policies.
+   * @returns List of policies.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/get-policy')
   async getAllPolicies() {
-    const policy = await this.awsIamService.getAllPolicies();
-    return { policy };
+    const data = await this.awsIamService.getAllPolicies();
+    return { data };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Retrieves all IAM roles.
+   * @returns List of roles.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/get-roles')
   async getAllRoles() {
-    const roles = await this.awsIamService.getAllRoles();
-    return { roles };
+    const data = await this.awsIamService.getAllRoles();
+    return { data };
   }
 
+  /**
+   * Creates a new IAM user.
+   * @param createAwsUserRequestDto - DTO with username.
+   * @returns Details of the created user.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/create-user')
   async createUser(@Body() createAwsUserRequestDto: CreateAwsUserRequestDto) {
-    return this.awsIamService.createUser(createAwsUserRequestDto.aws_username);
+    const data = await this.awsIamService.createUser(
+      createAwsUserRequestDto.aws_username,
+    );
+    return {
+      data,
+      message: 'New IAM user created successfully',
+    };
   }
 
+  /**
+   * Creates a login profile for an IAM user.
+   * @param createLoginProfileRequestDto - DTO with login profile details.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/create-login-profile')
   async createLoginProfile(
     @Body() createLoginProfileRequestDto: CreateLoginProfileRequestDto,
   ) {
     const { aws_password, aws_username, is_password_reset_required } =
       createLoginProfileRequestDto;
-    return this.awsIamService.createLoginProfile(
+    const data = await this.awsIamService.createLoginProfile(
       aws_username,
       aws_password,
       is_password_reset_required,
     );
+    return {
+      data,
+      message: `Login profile created successfully`,
+    };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Lists all access keys for an IAM user.
+   * @param awsUsernameRequestDto - DTO with username.
+   * @returns List of access keys.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/list-access-keys')
   async listAccessKeys(@Query() awsUsernameRequestDto: AwsUsernameRequestDto) {
-    return await this.awsIamService.listAccessKeys(
+    const data = await this.awsIamService.listAccessKeys(
       awsUsernameRequestDto.aws_username,
     );
+    return { data };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Retrieves login profile details of an IAM user.
+   * @param awsUsernameRequestDto - DTO with username.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/get-login-profile')
   async getLoginProfile(@Query() awsUsernameRequestDto: AwsUsernameRequestDto) {
-    return await this.awsIamService.getLoginProfile(
+    const data = await this.awsIamService.getLoginProfile(
       awsUsernameRequestDto.aws_username,
     );
+    return { data };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Lists attached user policies for an IAM user.
+   * @param awsUsernameRequestDto - DTO with username.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/list-attached-user-policies')
   async listAttachedUserPolicies(
     @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
-    return await this.awsIamService.listAttachedUserPolicies(
+    const data = await this.awsIamService.listAttachedUserPolicies(
       awsUsernameRequestDto.aws_username,
     );
+    return {
+      data,
+    };
   }
 
-  @AllowUnauthorized()
+  /**
+   * Lists inline user policies for an IAM user.
+   * @param awsUsernameRequestDto - DTO with username.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/list-inline-user-policies')
   async listUserPolicies(
     @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
-    return await this.awsIamService.listUserPolicies(
+    const data = await this.awsIamService.listUserPolicies(
       awsUsernameRequestDto.aws_username,
     );
+    return {
+      data,
+    };
   }
 
+  /**
+   * Deletes access keys for an IAM user.
+   * @param deleteAccessKeysRequestDto - DTO with access key details.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Delete('iam/access-keys')
   async deleteAccessKeys(
     @Query() deleteAccessKeysRequestDto: DeleteAccessKeysRequestDto,
   ) {
-    return this.awsIamService.deleteAccessKeys(
-      deleteAccessKeysRequestDto.username,
+    const data = await this.awsIamService.deleteAccessKeys(
+      deleteAccessKeysRequestDto.aws_username,
       deleteAccessKeysRequestDto.access_key_id,
     );
+    return {
+      data,
+      message: 'Access keys deleted successfully',
+    };
   }
 
+  /**
+   * Deletes the login profile for an IAM user.
+   * @param username - IAM username.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Delete('iam/user-profile/:username')
   async deleteLoginProfile(@Param('username') username: string) {
-    return this.awsIamService.deleteLoginProfile(username);
+    const data = await this.awsIamService.deleteLoginProfile(username);
+    return {
+      data,
+      message: 'User profile deleted successfully',
+    };
   }
 
+  /**
+   * Deletes an IAM user.
+   * @param username - IAM username.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Delete('iam/user/:username')
   async deleteUser(@Param('username') username: string) {
-    return this.awsIamService.deleteUser(username);
+    const data = await this.awsIamService.deleteUser(username);
+    return {
+      data,
+      message: 'IAM User deleted successfully',
+    };
   }
 
+  /**
+   * Creates access keys for an IAM user.
+   * @param awsUsernameRequestDto - DTO with username.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Post('iam/create-access-keys')
   async createAccessKeys(
     @Query() awsUsernameRequestDto: AwsUsernameRequestDto,
   ) {
-    return this.awsIamService.createAccessKeys(
+    const data = await this.awsIamService.createAccessKeys(
       awsUsernameRequestDto.aws_username,
     );
+    return {
+      data,
+      message: 'Access keys created successfully',
+    };
   }
 
+  /**
+   * Retrieves temporary console access URL for an IAM user.
+   * @param getTemporaryConsoleAccess - DTO with console access details.
+   * @returns Console access URL.
+   */
+  @RolesNeeded()
+  @PermissionsNeeded()
   @Get('iam/temporary-console-access')
   async getTemporaryConsoleAccess(
-    getTemporaryConsoleAccess: GetTemporaryConsoleAccess,
+    @Query() getTemporaryConsoleAccess: GetTemporaryConsoleAccess,
   ) {
-    return await this.awsStsService.getTemporaryConsoleAccess(
+    const data = await this.awsStsService.getTemporaryConsoleAccess(
       getTemporaryConsoleAccess.role_arn,
       getTemporaryConsoleAccess.session_name,
       getTemporaryConsoleAccess.external_id,
+      getTemporaryConsoleAccess.duration_in_seconds,
     );
+    return {
+      data,
+    };
   }
 }

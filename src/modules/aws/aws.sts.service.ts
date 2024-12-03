@@ -22,6 +22,13 @@ export class AwsStsService {
     });
   }
 
+  /**
+   * Assumes an IAM role and retrieves temporary security credentials.
+   *
+   * @param assumeRoleRequestDto - Data transfer object containing role details
+   * @returns Temporary security credentials.
+   * @throws HttpException if there is an error from the AWS SDK.
+   */
   async assumeRole(assumeRoleRequestDto: AssumeRoleRequestDto): Promise<any> {
     const { role_arn, session_name, duration_in_seconds } =
       assumeRoleRequestDto;
@@ -40,6 +47,16 @@ export class AwsStsService {
     }
   }
 
+  /**
+   * Generates a temporary AWS Management Console login URL using assumed role credentials.
+   *
+   * @param roleArn - The ARN of the IAM role to assume.
+   * @param sessionName - A unique name for the session.
+   * @param externalId - A unique identifier to differentiate between entities (optional).
+   * @param durationSeconds - The duration of the session in seconds (default: 3600; max: 43200).
+   * @returns A URL for temporary console access.
+   * @throws HttpException if there is an error from the AWS SDK or during URL generation.
+   */
   async getTemporaryConsoleAccess(
     roleArn: string,
     sessionName: string,
@@ -51,7 +68,7 @@ export class AwsStsService {
       const command = new AssumeRoleCommand({
         RoleArn: roleArn,
         RoleSessionName: sessionName,
-        ExternalId: externalId,
+        ExternalId: externalId, //Optional, useful in cross-account scenarios.
         DurationSeconds: durationSeconds, // Duration of the session (max: 12 hours)
       });
 
@@ -60,7 +77,7 @@ export class AwsStsService {
       const { AccessKeyId, SecretAccessKey, SessionToken } =
         response.Credentials;
 
-      //Generate console Url
+      // Generate AWS console federation URL
       const federationUrl = `https://signin.aws.amazon.com/federation`;
       const sessionData = JSON.stringify({
         sessionId: AccessKeyId,
