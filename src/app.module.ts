@@ -26,8 +26,12 @@ import { CleanupService } from './cleanup.service';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: entities,
-        logging: true,
         migrations: [migrationFolder],
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
       }),
       inject: [ConfigService],
     }),
