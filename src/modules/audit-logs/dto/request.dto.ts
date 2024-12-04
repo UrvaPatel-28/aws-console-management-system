@@ -73,7 +73,7 @@ export class GetAuditLogsRequestDto extends PaginationDto {
   @IsOptional()
   @ApiPropertyOptional({ example: 70 })
   @Transform(({ value }) => +value)
-  execution_duration_in_ms: number;
+  max_execution_duration_in_ms: number;
 
   @IsEnum(SortByEnum)
   @IsOptional()

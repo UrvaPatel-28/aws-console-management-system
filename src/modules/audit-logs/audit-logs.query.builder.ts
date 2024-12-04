@@ -23,7 +23,7 @@ export class AuditLogsQueryBuilder {
       current_page,
       date_from,
       date_to,
-      execution_duration_in_ms,
+      max_execution_duration_in_ms,
       http_method,
       ip_address,
       record_per_page,
@@ -70,11 +70,11 @@ export class AuditLogsQueryBuilder {
     if (date_to) {
       query.andWhere('audit_log.created_at <= :date_to', { date_to });
     }
-    if (execution_duration_in_ms) {
+    if (max_execution_duration_in_ms) {
       query.andWhere(
-        'audit_log.execution_duration <= :execution_duration_in_ms',
+        'audit_log.execution_duration <= :max_execution_duration_in_ms',
         {
-          execution_duration_in_ms,
+          max_execution_duration_in_ms,
         },
       );
     }
