@@ -1,7 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { JwtAuthGuard } from './utils/guards/jwt-auth.guard';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { PermissionGuard } from './utils/guards/permission.guard';
@@ -72,6 +72,6 @@ async function bootstrap() {
   // Get the port from the config and start the application
   const port = configService.get<number>('PORT') || 3000;
   await app.listen(port);
-  console.log(`Application is running on port ${port}`);
+  Logger.log(`Application is running on port ${port}`);
 }
 void bootstrap();

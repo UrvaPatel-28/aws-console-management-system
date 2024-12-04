@@ -47,7 +47,6 @@ export class PermissionGuard implements CanActivate {
       ROLES,
       context.getClass(),
     );
-    console.log(rolesFromClass, rolesFromHandler);
 
     const permissionsFromHandler = this.reflector.get<PermissionEnum[]>(
       PERMISSIONS,
