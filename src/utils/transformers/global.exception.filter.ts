@@ -12,6 +12,10 @@ import { AuditLog } from 'src/entities/audit-logs.entity';
 import { DataSource } from 'typeorm';
 import { UserBasicInfo } from '../interface/auth.type';
 
+/**
+ * It is a custom exception filter that handles all exceptions.
+ * It logs the exception, stores an audit log table, and returns a standardized error response to the client.
+ */
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(
@@ -22,10 +26,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   async catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request & UserBasicInfo>();
-    console.log('exception', exception);
+    const response = ctx.getResponse<Response>(); // Extracts the response object
+    const request = ctx.getRequest<Request & UserBasicInfo>(); // Extracts the request object, including user info
 
+    // Determine the HTTP status code based on the exception type
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
@@ -38,9 +42,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const responseData = exception.getResponse();
 
       if (typeof responseData === 'string') {
-        message = responseData; // Direct string response
+        message = responseData; // If the response is a string, use it directly
       } else if (typeof responseData === 'object' && responseData !== null) {
-        // Check if 'message' exists in the responseData object
+        // If the response is an object, check if it contains a message field
         if ('message' in responseData) {
           const responseMessage = (
             responseData as { message: string | string[] }
@@ -56,6 +60,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = 'Internal Server Error'; // For any unknown exception type, return a generic message
     }
 
+    // Log the error details using a logger
     this.logger.error({
       timestamp: new Date().toISOString(),
       path: request.originalUrl,
@@ -77,6 +82,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     });
     await this.dataSource.manager.save(AuditLog, auditLog);
 
+    // Send the error response to the client
     response.status(status).json({
       is_error: true,
       status,
