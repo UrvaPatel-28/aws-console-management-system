@@ -28,7 +28,6 @@ import { CleanupService } from './cleanup.service';
         entities: entities,
         logging: true,
         migrations: [migrationFolder],
-        synchronize: true,
       }),
       inject: [ConfigService],
     }),
