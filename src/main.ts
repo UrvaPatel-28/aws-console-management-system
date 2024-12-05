@@ -38,7 +38,7 @@ async function bootstrap() {
 
   // Swagger setup with description for each tag
   const documentBuilder = new DocumentBuilder()
-    .setTitle('The API Documentation')
+    .setTitle('API Documentation')
     .setDescription('The API documentation for managing AWS credentials')
     .setVersion('1.0')
     .addTag(
