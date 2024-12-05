@@ -25,8 +25,13 @@ import {
 } from 'src/utils/decorators/permissions.decorator';
 import { PermissionEnum, RoleEnum } from 'src/constants/enum';
 import { UserBasicInfo } from 'src/utils/interface/auth.type';
+import { User as UserEntity } from 'src/entities/user.entity';
 import { User } from 'src/utils/decorators/user.decorator';
 import { UUID } from 'crypto';
+import { SuccessResponse } from 'src/utils/interface/success.response';
+import { AwsConsoleCredentials } from 'src/entities/aws-console-credentials.entity';
+import { AwsProgrammaticCredentials } from 'src/entities/aws-programmatic-credentials.entity';
+import { UpdateResult } from 'typeorm';
 
 @Controller('user')
 @ApiBearerAuth() // Adds authentication information in the Swagger documentation.
@@ -44,7 +49,9 @@ export class UserController {
   @RolesNeeded()
   @PermissionsNeeded()
   @Post()
-  async createUser(@Body() createUserRequestDto: CreateUserRequestDto) {
+  async createUser(
+    @Body() createUserRequestDto: CreateUserRequestDto,
+  ): Promise<SuccessResponse<UserEntity>> {
     const data = await this.userService.createUser(createUserRequestDto);
     return {
       data,
@@ -59,7 +66,7 @@ export class UserController {
   @RolesNeeded()
   @PermissionsNeeded()
   @Get()
-  async getUsers() {
+  async getUsers(): Promise<SuccessResponse<UserEntity[]>> {
     const data = await this.userService.getUsers();
     return {
       data,
@@ -73,7 +80,9 @@ export class UserController {
   @Get('/list-console-credentials')
   @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
   @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
-  async listAwsConsoleCredentials() {
+  async listAwsConsoleCredentials(): Promise<
+    SuccessResponse<AwsConsoleCredentials[]>
+  > {
     const data = await this.userService.listAwsConsoleCredentials();
     return {
       data,
@@ -87,7 +96,9 @@ export class UserController {
   @Get('/list-programmatic-credentials')
   @RolesNeeded(RoleEnum.TeamLeader, RoleEnum.TeamMember)
   @PermissionsNeeded(PermissionEnum.ViewAwsCredentials)
-  async listAwsProgrammaticCredentials() {
+  async listAwsProgrammaticCredentials(): Promise<
+    SuccessResponse<AwsProgrammaticCredentials[]>
+  > {
     const data = await this.userService.listAwsProgrammaticCredentials();
     return { data };
   }
@@ -104,7 +115,7 @@ export class UserController {
   async updateUser(
     @Body() updateUserRequestDto: UpdateUserRequestDto,
     @Param('user_id') userId: UUID,
-  ) {
+  ): Promise<SuccessResponse<UpdateResult>> {
     const data = await this.userService.updateUser(
       updateUserRequestDto,
       userId,
@@ -123,7 +134,9 @@ export class UserController {
   @RolesNeeded()
   @PermissionsNeeded()
   @Get('/:user_id')
-  async getUserDetails(@Param('user_id') userId: UUID) {
+  async getUserDetails(
+    @Param('user_id') userId: UUID,
+  ): Promise<SuccessResponse<UserEntity>> {
     const data = await this.userService.getUserDetails(userId);
     return {
       data,
@@ -143,7 +156,7 @@ export class UserController {
     @Body()
     addAwsConsoleCredentialsRequestDto: AddAwsConsoleCredentialsRequestDto,
     @User() user: UserBasicInfo, // Custom decorator to inject authenticated user information.
-  ) {
+  ): Promise<SuccessResponse<AwsConsoleCredentials>> {
     const data = await this.userService.createAwsConsoleCredentials(
       addAwsConsoleCredentialsRequestDto,
       user,
@@ -167,7 +180,7 @@ export class UserController {
     @Body()
     updateAwsConsoleCredentialsRequestDto: UpdateAwsConsoleCredentialsRequestDto,
     @User() user: UserBasicInfo,
-  ) {
+  ): Promise<SuccessResponse<void>> {
     const data = await this.userService.updateAwsConsoleCredentials(
       updateAwsConsoleCredentialsRequestDto,
       user,
@@ -190,7 +203,7 @@ export class UserController {
   async deleteAwsConsoleCredentials(
     @Body()
     deleteAwsConsoleCredentialsRequestDto: DeleteAwsConsoleCredentialsRequestDto,
-  ) {
+  ): Promise<SuccessResponse<void>> {
     const data = await this.userService.deleteAwsConsoleCredentials(
       deleteAwsConsoleCredentialsRequestDto,
     );
@@ -213,7 +226,7 @@ export class UserController {
     @Body()
     createProgrammaticCredentialsRequestDto: CreateProgrammaticCredentialsRequestDto,
     @User() user: UserBasicInfo,
-  ) {
+  ): Promise<SuccessResponse<AwsProgrammaticCredentials>> {
     const data = await this.userService.createProgrammaticCredentials(
       createProgrammaticCredentialsRequestDto,
       user,
@@ -238,7 +251,7 @@ export class UserController {
     @Body()
     updateProgrammaticCredentialsRequestDto: UpdateProgrammaticCredentialsRequestDto,
     @User() user: UserBasicInfo,
-  ) {
+  ): Promise<SuccessResponse<void>> {
     const data = await this.userService.updateAwsProgrammaticCredentials(
       updateProgrammaticCredentialsRequestDto,
       user,
@@ -261,7 +274,7 @@ export class UserController {
   async deleteProgrammaticCredentials(
     @Body()
     deleteProgrammaticCredentialsRequestDto: DeleteProgrammaticCredentialsRequestDto,
-  ) {
+  ): Promise<SuccessResponse<void>> {
     const data = await this.userService.deleteProgrammaticCredentials(
       deleteProgrammaticCredentialsRequestDto,
     );

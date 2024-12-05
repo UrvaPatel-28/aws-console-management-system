@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, DeleteResult, EntityManager, UpdateResult } from 'typeorm';
 import {
   AddAwsConsoleCredentialsRequestDto,
   CreateUserRequestDto,
@@ -28,7 +28,7 @@ export class UserQueryBuilder {
    * Create a new user.
    * @param createUserRequestDto - Data transfer object for creating a user.
    */
-  async createUser(createUserRequestDto: CreateUserRequestDto) {
+  async createUser(createUserRequestDto: CreateUserRequestDto): Promise<User> {
     const { email, password, role_id, username } = createUserRequestDto;
 
     return this.dataSource.transaction(async (transactionalEntityManager) => {
@@ -48,7 +48,7 @@ export class UserQueryBuilder {
   /**
    * Get the list of all users.
    */
-  async getUsers() {
+  async getUsers(): Promise<User[]> {
     return await this.dataSource.manager.find(User, {
       select: [
         'id',
@@ -66,7 +66,7 @@ export class UserQueryBuilder {
    * Get details of a specific user.
    * @param userId - UUID of the user.
    */
-  async getUserDetails(userId: UUID) {
+  async getUserDetails(userId: UUID): Promise<User> {
     return await this.dataSource.manager.findOne(User, {
       where: { id: userId },
       select: [
@@ -86,7 +86,10 @@ export class UserQueryBuilder {
    * @param updateUserRequestDto - Data transfer object for updating a user.
    * @param userId - UUID of the user to update.
    */
-  async updateUser(updateUserRequestDto: UpdateUserRequestDto, userId: UUID) {
+  async updateUser(
+    updateUserRequestDto: UpdateUserRequestDto,
+    userId: UUID,
+  ): Promise<UpdateResult> {
     const { email, password, role_id, username } = updateUserRequestDto;
     const updateDetails: Partial<User> = {};
     if (email) updateDetails.email = email;
@@ -105,7 +108,7 @@ export class UserQueryBuilder {
    * Find user from database by provided email.
    * @param email - Email of user.
    */
-  async findUserByEmail(email: string) {
+  async findUserByEmail(email: string): Promise<User> {
     return this.dataSource.manager.findOne(User, { where: { email } });
   }
 
@@ -142,7 +145,7 @@ export class UserQueryBuilder {
     transactionalEntityManager: EntityManager,
     updateAwsConsoleCredentialsRequestDto: UpdateAwsConsoleCredentialsRequestDto,
     user: UserBasicInfo,
-  ) {
+  ): Promise<UpdateResult> {
     const {
       aws_new_password,
       aws_new_username,
@@ -155,7 +158,7 @@ export class UserQueryBuilder {
     if (aws_new_password) updateDetails.aws_password = aws_new_password;
     if (expiration_time) updateDetails.expiration_time = expiration_time;
 
-    await transactionalEntityManager.update(
+    return await transactionalEntityManager.update(
       AwsConsoleCredentials,
       {
         aws_username,
@@ -175,7 +178,7 @@ export class UserQueryBuilder {
   async deleteAwsConsoleCredentials(
     transactionalEntityManager: EntityManager,
     username: string,
-  ) {
+  ): Promise<DeleteResult> {
     return await transactionalEntityManager.delete(AwsConsoleCredentials, {
       aws_username: username,
     });
@@ -198,7 +201,7 @@ export class UserQueryBuilder {
     expiration_time: Date,
     aws_username: string,
     user: UserBasicInfo,
-  ) {
+  ): Promise<AwsProgrammaticCredentials> {
     const awsUser = this.dataSource.manager.create(AwsProgrammaticCredentials, {
       aws_access_key: AccessKeyId,
       aws_secret_key: SecretAccessKey,
@@ -221,10 +224,10 @@ export class UserQueryBuilder {
     transactionalEntityManager: EntityManager,
     updateProgrammaticCredentialsRequestDto: UpdateProgrammaticCredentialsRequestDto,
     user: UserBasicInfo,
-  ) {
+  ): Promise<UpdateResult> {
     const { aws_username, status } = updateProgrammaticCredentialsRequestDto;
 
-    await transactionalEntityManager.update(
+    return await transactionalEntityManager.update(
       AwsProgrammaticCredentials,
       {
         aws_username,
@@ -242,17 +245,19 @@ export class UserQueryBuilder {
   async deleteProgrammaticCredentials(
     transactionalEntityManager: EntityManager,
     username: string,
-  ) {
-    await transactionalEntityManager.delete(AwsProgrammaticCredentials, {
+  ): Promise<DeleteResult> {
+    return await transactionalEntityManager.delete(AwsProgrammaticCredentials, {
       aws_username: username,
     });
   }
 
-  async listAwsConsoleCredentials() {
+  async listAwsConsoleCredentials(): Promise<AwsConsoleCredentials[]> {
     return await this.dataSource.manager.find(AwsConsoleCredentials);
   }
 
-  async listAwsProgrammaticCredentials() {
+  async listAwsProgrammaticCredentials(): Promise<
+    AwsProgrammaticCredentials[]
+  > {
     return await this.dataSource.manager.find(AwsProgrammaticCredentials);
   }
 }

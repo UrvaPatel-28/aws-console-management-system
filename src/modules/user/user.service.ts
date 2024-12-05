@@ -17,10 +17,13 @@ import {
 import { UserBasicInfo } from 'src/utils/interface/auth.type';
 import { AwsIamService } from '../aws/aws.iam.service';
 import { AwsStsService } from '../aws/aws.sts.service';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { DataSource, QueryFailedError, UpdateResult } from 'typeorm';
 import { AwsAccessKeysStatusEnum } from 'src/constants/enum';
 import { UUID } from 'crypto';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { AwsConsoleCredentials } from 'src/entities/aws-console-credentials.entity';
+import { User } from 'src/entities/user.entity';
+import { AwsProgrammaticCredentials } from 'src/entities/aws-programmatic-credentials.entity';
 
 @Injectable()
 export class UserService {
@@ -41,11 +44,10 @@ export class UserService {
       .createUser(createUserRequestDto)
       .catch(this.handleAddUserExceptions);
   }
-
   /**
    * Get the list of all users.
    */
-  async getUsers() {
+  async getUsers(): Promise<User[]> {
     return await this.userQueryBuilder.getUsers();
   }
 
@@ -53,7 +55,7 @@ export class UserService {
    * Get details of a specific user.
    * @param userId - UUID of the user.
    */
-  async getUserDetails(userId: UUID) {
+  async getUserDetails(userId: UUID): Promise<User> {
     return await this.userQueryBuilder.getUserDetails(userId);
   }
 
@@ -62,7 +64,10 @@ export class UserService {
    * @param updateUserRequestDto - Data transfer object for updating a user.
    * @param userId - UUID of the user to update.
    */
-  async updateUser(updateUserRequestDto: UpdateUserRequestDto, userId: UUID) {
+  async updateUser(
+    updateUserRequestDto: UpdateUserRequestDto,
+    userId: UUID,
+  ): Promise<UpdateResult> {
     return await this.userQueryBuilder
       .updateUser(updateUserRequestDto, userId)
       .catch(this.handleAddUserExceptions);
@@ -77,30 +82,34 @@ export class UserService {
   async createAwsConsoleCredentials(
     addAwsConsoleCredentialsRequestDto: AddAwsConsoleCredentialsRequestDto,
     user: UserBasicInfo,
-  ) {
+  ): Promise<AwsConsoleCredentials> {
     const { aws_password, aws_username, is_password_reset_required } =
       addAwsConsoleCredentialsRequestDto;
 
     try {
       // Start a database transaction
-      await this.dataSource.transaction(async (transactionalEntityManager) => {
-        // Save AWS Console credential details into the database
-        await this.userQueryBuilder.createAwsConsoleCredentials(
-          transactionalEntityManager,
-          addAwsConsoleCredentialsRequestDto,
-          user,
-        );
+      return await this.dataSource.transaction(
+        async (transactionalEntityManager): Promise<AwsConsoleCredentials> => {
+          // Save AWS Console credential details into the database
+          const response =
+            await this.userQueryBuilder.createAwsConsoleCredentials(
+              transactionalEntityManager,
+              addAwsConsoleCredentialsRequestDto,
+              user,
+            );
 
-        // Create an IAM user in AWS with the provided username
-        await this.awsIamService.createUser(aws_username);
+          // Create an IAM user in AWS with the provided username
+          await this.awsIamService.createUser(aws_username);
 
-        // Create a login profile for the IAM user with a password and optional password reset requirement
-        await this.awsIamService.createLoginProfile(
-          aws_username,
-          aws_password,
-          is_password_reset_required,
-        );
-      });
+          // Create a login profile for the IAM user with a password and optional password reset requirement
+          await this.awsIamService.createLoginProfile(
+            aws_username,
+            aws_password,
+            is_password_reset_required,
+          );
+          return response;
+        },
+      );
     } catch (error) {
       // Handle exceptions and map errors to appropriate responses
       this.handleCreateConsoleUserExceptions(error);
@@ -115,34 +124,36 @@ export class UserService {
   async updateAwsConsoleCredentials(
     updateAwsConsoleCredentialsRequestDto: UpdateAwsConsoleCredentialsRequestDto,
     user: UserBasicInfo,
-  ) {
+  ): Promise<void> {
     const { aws_new_username, aws_username, aws_new_password } =
       updateAwsConsoleCredentialsRequestDto;
     let awsUsername = aws_username;
     try {
       // Start a database transaction
-      await this.dataSource.transaction(async (transactionalEntityManager) => {
-        // Update AWS Console credentials into the database
-        await this.userQueryBuilder.updateAwsConsoleCredentials(
-          transactionalEntityManager,
-          updateAwsConsoleCredentialsRequestDto,
-          user,
-        );
-
-        // If a new username is provided, update the IAM user in AWS
-        if (aws_new_username) {
-          await this.awsIamService.updateUser(aws_username, aws_new_username);
-          awsUsername = aws_new_username;
-        }
-
-        // If a new password is provided, update the IAM login profile in AWS
-        if (aws_new_password) {
-          await this.awsIamService.updateLoginProfile(
-            awsUsername,
-            aws_new_password,
+      return await this.dataSource.transaction(
+        async (transactionalEntityManager) => {
+          // Update AWS Console credentials into the database
+          await this.userQueryBuilder.updateAwsConsoleCredentials(
+            transactionalEntityManager,
+            updateAwsConsoleCredentialsRequestDto,
+            user,
           );
-        }
-      });
+
+          // If a new username is provided, update the IAM user in AWS
+          if (aws_new_username) {
+            await this.awsIamService.updateUser(aws_username, aws_new_username);
+            awsUsername = aws_new_username;
+          }
+
+          // If a new password is provided, update the IAM login profile in AWS
+          if (aws_new_password) {
+            await this.awsIamService.updateLoginProfile(
+              awsUsername,
+              aws_new_password,
+            );
+          }
+        },
+      );
     } catch (error) {
       // Handle exceptions and map errors to appropriate responses
       this.handleCreateConsoleUserExceptions(error);
@@ -155,7 +166,7 @@ export class UserService {
    */
   async deleteAwsConsoleCredentials(
     deleteAwsConsoleCredentialsRequestDto: DeleteAwsConsoleCredentialsRequestDto,
-  ) {
+  ): Promise<void> {
     const { aws_username } = deleteAwsConsoleCredentialsRequestDto;
 
     try {
@@ -228,7 +239,7 @@ export class UserService {
   async createProgrammaticCredentials(
     createProgrammaticCredentialsRequestDto: CreateProgrammaticCredentialsRequestDto,
     user: UserBasicInfo,
-  ) {
+  ): Promise<AwsProgrammaticCredentials> {
     const { aws_username, expiration_time } =
       createProgrammaticCredentialsRequestDto;
     try {
@@ -272,7 +283,7 @@ export class UserService {
   async updateAwsProgrammaticCredentials(
     updateProgrammaticCredentialsRequestDto: UpdateProgrammaticCredentialsRequestDto,
     user: UserBasicInfo,
-  ) {
+  ): Promise<void> {
     const { aws_username, status } = updateProgrammaticCredentialsRequestDto;
     try {
       // Start a database transaction
@@ -319,7 +330,7 @@ export class UserService {
    */
   async deleteProgrammaticCredentials(
     deleteProgrammaticCredentialsRequestDto: DeleteProgrammaticCredentialsRequestDto,
-  ) {
+  ): Promise<void> {
     const { aws_username } = deleteProgrammaticCredentialsRequestDto;
     try {
       // Start a database transaction
@@ -352,14 +363,16 @@ export class UserService {
   /**
    * List all AWS Console credentials.
    */
-  async listAwsConsoleCredentials() {
+  async listAwsConsoleCredentials(): Promise<AwsConsoleCredentials[]> {
     return await this.userQueryBuilder.listAwsConsoleCredentials();
   }
 
   /**
    * List all AWS programmatic credentials.
    */
-  async listAwsProgrammaticCredentials() {
+  async listAwsProgrammaticCredentials(): Promise<
+    AwsProgrammaticCredentials[]
+  > {
     return await this.userQueryBuilder.listAwsProgrammaticCredentials();
   }
 
@@ -370,7 +383,7 @@ export class UserService {
    * @param error - The error object that was caught during the query execution.
    * @throws Throws a specific exception depending on the error encountered.
    */
-  private handleAddUserExceptions(error) {
+  private handleAddUserExceptions(error): never {
     if (
       error instanceof QueryFailedError &&
       error.driverError.code == 23503 &&
@@ -400,7 +413,7 @@ export class UserService {
    * @param error - The error object that was caught during the query execution.
    * @throws Throws a specific exception depending on the error encountered.
    */
-  private handleCreateConsoleUserExceptions(error) {
+  private handleCreateConsoleUserExceptions(error): never {
     if (
       error instanceof QueryFailedError &&
       error.driverError.code == 23503 &&
