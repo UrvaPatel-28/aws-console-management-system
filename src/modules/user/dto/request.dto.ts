@@ -73,7 +73,8 @@ export class AddAwsConsoleCredentialsRequestDto extends AwsUsernameDto {
   expiration_time: Date;
 
   @IsBoolean()
-  @ApiProperty({ example: false })
+  @IsOptional()
+  @ApiPropertyOptional({ example: false })
   is_password_reset_required: boolean;
 }
 

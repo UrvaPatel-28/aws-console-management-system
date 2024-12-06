@@ -39,22 +39,23 @@ export class GlobalInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map(async (response) => {
         // Logs the successful response
-        const auditLog = this.dataSource.manager.create(AuditLog, {
-          user: request.user ?? null,
-          api_endpoint: request.url,
-          http_method: request.method,
-          request_payload: request.body,
-          response_status: queryResponse?.statusCode,
-          response_message: response?.message ?? 'Success',
-          user_agent: request.headers['user-agent'],
-          ip_address: ipAddress,
-          response: response,
-          execution_duration: Date.now() - now, // The time taken to process the request in milliseconds
-        });
+        if (!request.url.startsWith('/audit')) {
+          const auditLog = this.dataSource.manager.create(AuditLog, {
+            user: request.user ?? null,
+            api_endpoint: request.url,
+            http_method: request.method,
+            request_payload: request.body,
+            response_status: queryResponse?.statusCode,
+            response_message: response?.message ?? 'Success',
+            user_agent: request.headers['user-agent'],
+            ip_address: ipAddress,
+            response: response,
+            execution_duration: Date.now() - now, // The time taken to process the request in milliseconds
+          });
 
-        // Saves the audit log to the database
-        await this.dataSource.manager.save(auditLog);
-
+          // Saves the audit log to the database
+          await this.dataSource.manager.save(auditLog);
+        }
         // Returns the response in a structured format
         return {
           is_error: false,
