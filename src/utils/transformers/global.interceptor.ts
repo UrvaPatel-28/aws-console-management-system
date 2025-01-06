@@ -49,7 +49,7 @@ export class GlobalInterceptor implements NestInterceptor {
             response_message: response?.message ?? 'Success',
             user_agent: request.headers['user-agent'],
             ip_address: ipAddress,
-            response: response,
+            // response: response,
             execution_duration: Date.now() - now, // The time taken to process the request in milliseconds
           });
 
