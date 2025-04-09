@@ -1,0 +1,9 @@
+node_modules/
+**/dist
+**/build
+**/.next
+**/tsconfig.build.tsbuildinfo
+**/tsconfig.tsbuildinfo
+.pnpm-store
+**/node_modules
+.env.*

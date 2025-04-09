@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  app:
+    container_name: aws_console_management_backend
+    image: ghcr.io/urvapatel-28/aws-console-management-system-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: always
+
+
+    db:
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=password
+     - POSTGRES_DB=aws_console_management
+     - PGDATA=/var/lib/postgresql/data/pgdata
+    restart: always
+
+volumes:
+  postgres_data:
+    driver: local

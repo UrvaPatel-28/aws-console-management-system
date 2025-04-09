@@ -1,0 +1,44 @@
+name: CI/CD - GHCR to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  EC2_KEY: ${{ secrets.EC2_KEY }}
+  EC2_USER: ${{ secrets.EC2_USER }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+  GITHUB_USERNAME: ${{ github.actor }}
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/aws-console-management-system-backend:latest
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in into GitHub Container Registry
+        run: echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
+      
+      - name: Build and push Docker image
+        run: |
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
+
+      - name: Setup SSH key
+        run: |
+          echo "$EC2_KEY" | base64 -d > key.pem
+          chmod 400 key.pem 
+
+      - name: Deploy on EC2  
+        run : |
+            ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
+              cd home/ubuntu/aws-console-management-system
+              docker-compose down
+              docker-compose pull
+              docker-compose up -d --remove-orphans
+            EOF    
