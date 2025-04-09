@@ -18,9 +18,9 @@ export default new DataSource({
   database: process.env.DB_DATABASE,
   entities: entities,
   migrations: [migrationFolder],
-  extra: {
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  },
+  // extra: {
+  //   ssl: {
+  //     rejectUnauthorized: false,
+  //   },
+  // },
 });

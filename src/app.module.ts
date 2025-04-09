@@ -27,11 +27,11 @@ import { CleanupService } from './cleanup.service';
         database: configService.get('DB_DATABASE'),
         entities: entities,
         migrations: [migrationFolder],
-        extra: {
-          ssl: {
-            rejectUnauthorized: false,
-          },
-        },
+        // extra: {
+        //   ssl: {
+        //     rejectUnauthorized: false,
+        //   },
+        // },
       }),
       inject: [ConfigService],
     }),
