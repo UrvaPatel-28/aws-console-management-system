@@ -27,6 +27,7 @@ import { CleanupService } from './cleanup.service';
         database: configService.get('DB_DATABASE'),
         entities: entities,
         migrations: [migrationFolder],
+        synchronize: true,
         // extra: {
         //   ssl: {
         //     rejectUnauthorized: false,
