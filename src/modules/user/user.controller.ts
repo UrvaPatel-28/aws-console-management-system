@@ -32,6 +32,7 @@ import { SuccessResponse } from 'src/utils/interface/success.response';
 import { AwsConsoleCredentials } from 'src/entities/aws-console-credentials.entity';
 import { AwsProgrammaticCredentials } from 'src/entities/aws-programmatic-credentials.entity';
 import { UpdateResult } from 'typeorm';
+import { AllowUnauthorized } from 'src/utils/decorators/allow-unauthorized.decorator';
 
 @Controller('user')
 @ApiBearerAuth() // Adds authentication information in the Swagger documentation.
@@ -70,6 +71,14 @@ export class UserController {
     const data = await this.userService.getUsers();
     return {
       data,
+    };
+  }
+
+  @Get('/health-check')
+  @AllowUnauthorized()
+  healthCheck() {
+    return {
+      data: { success: true },
     };
   }
 
