@@ -38,7 +38,7 @@ jobs:
         run : |
             ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
               cd home/ubuntu/aws-console-management-system
-              docker-compose down
-              docker-compose pull
-              docker-compose up -d --remove-orphans
+              docker compose down
+              docker compose pull
+              docker compose up -d --remove-orphans
             EOF    
