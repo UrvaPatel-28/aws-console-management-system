@@ -12,6 +12,8 @@ from node:lts-alpine AS runner
 WORKDIR /app
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/dist ./dist
+COPY --from=base /app/tsconfig.json ./
+COPY --from=base /app/tsconfig.build.json ./
 COPY package.json ./
 
 EXPOSE 3001
