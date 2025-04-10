@@ -36,7 +36,7 @@ jobs:
 
       - name: Copy files to EC2
         run: |
-          scp -i key.pem -o StrictHostKeyChecking=no -r docker-compose.yml nginx $EC2_USER@$EC2_HOST:/aws-console-management-system
+          scp -i key.pem -o StrictHostKeyChecking=no -r docker-compose.yml nginx $EC2_USER@$EC2_HOST:~/aws-console-management-system
 
       - name: Deploy on EC2  
         run: |
