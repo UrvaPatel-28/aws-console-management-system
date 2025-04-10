@@ -11,7 +11,7 @@ env:
   EC2_HOST: ${{ secrets.EC2_HOST }}
   GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
   GITHUB_USERNAME: ${{ github.actor }}
-  IMAGE_NAME: ghcr.io/urvapatel-28/aws-console-management-system-backend:latest
+  IMAGE_NAME: ghcr.io/${{ github.actor.toLowerCase() }}/aws-console-management-system-backend:latest
 
 jobs:
   build-and-deploy:
@@ -32,11 +32,15 @@ jobs:
       - name: Setup SSH key
         run: |
           echo "$EC2_KEY" | base64 -d > key.pem
-          chmod 600 key.pem 
+          chmod 400 key.pem 
+
+      - name: Copy files to EC2
+        run: |
+          scp -i key.pem -o StrictHostKeyChecking=no -r docker-compose.yml nginx $EC2_USER@$EC2_HOST:/aws-console-management-system
 
       - name: Deploy on EC2  
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << EOF
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_USERNAME}" --password-stdin
             cd ~/aws-console-management-system
             docker-compose down
