@@ -11,7 +11,7 @@ env:
   EC2_HOST: ${{ secrets.EC2_HOST }}
   GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
   GITHUB_USERNAME: ${{ github.actor }}
-  IMAGE_NAME: ghcr.io/${{ github.actor.toLowerCase() }}/aws-console-management-system-backend:latest
+  IMAGE_NAME: ghcr.io/urvapatel-28/aws-console-management-system-backend:latest
 
 jobs:
   build-and-deploy:
